@@ -43,7 +43,7 @@ const Hero = () => {
             className="animate-fade-in max-w-lg text-lg font-medium leading-snug text-hero-text [text-shadow:0_2px_0_var(--hero-x-line)] md:text-xl"
             style={{ animationDelay: '0.1s' }}
           >
-            Час хохота вместо ещё&nbsp;одного вечера с телефоном. Диафрагма
+            100 минут хохота вместо ещё&nbsp;одного вечера с телефоном. Диафрагма
             включается&nbsp;— мозг сам меняет кортизол на&nbsp;эндорфины.
           </p>
 
