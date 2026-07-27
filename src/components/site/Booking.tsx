@@ -47,7 +47,7 @@ const Booking = () => {
             </h2>
             <p className="mt-5 max-w-md text-lg font-medium leading-snug text-hero-muted">
               Оставьте заявку — подберём удобное время и забронируем место в
-              ближайшей группе. Занятие всего 900&nbsp;₽.
+              ближайшей группе. Занятие всего 700&nbsp;₽.
             </p>
 
             <ul className="mt-9 flex flex-col gap-5">
