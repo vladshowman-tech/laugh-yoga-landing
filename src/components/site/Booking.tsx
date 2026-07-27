@@ -47,7 +47,7 @@ const Booking = () => {
             </h2>
             <p className="mt-5 max-w-md text-lg font-medium leading-snug text-hero-muted">
               Оставьте заявку — подберём удобное время и забронируем место в
-              ближайшей группе. Пробное занятие всего 900&nbsp;₽.
+              ближайшей группе. Занятие всего 900&nbsp;₽.
             </p>
 
             <ul className="mt-9 flex flex-col gap-5">
@@ -122,7 +122,7 @@ const Booking = () => {
               type="submit"
               className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-[var(--hero-x-ho)] px-8 py-4 font-head text-lg font-extrabold text-hero-accent transition-transform hover:-translate-y-1 hover:rotate-1"
             >
-              Записаться на пробное <span aria-hidden>→</span>
+              Записаться на занятие <span aria-hidden>→</span>
             </button>
             <p className="mt-3 text-center text-xs font-medium text-hero-muted">
               Нажимая кнопку, вы соглашаетесь на обработку данных

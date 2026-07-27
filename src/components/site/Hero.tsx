@@ -59,7 +59,7 @@ const Hero = () => {
             className="animate-fade-in text-sm font-medium text-hero-text/85"
             style={{ animationDelay: '0.3s' }}
           >
-            Пробное занятие — 900&nbsp;₽. Не смешно — второе бесплатно.
+            Занятие — 900&nbsp;₽. Не смешно — второе бесплатно.
           </span>
         </div>
       </div>
