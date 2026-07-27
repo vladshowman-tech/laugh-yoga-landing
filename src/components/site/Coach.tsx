@@ -14,9 +14,9 @@ const Coach = () => {
           <div className="relative">
             <div className="absolute -left-3 -top-3 h-full w-full -rotate-3 rounded-2xl border-4 border-hero-accent" aria-hidden />
             <img
-              src="https://cdn.poehali.dev/projects/4626b584-3db2-4647-9c5a-24f1113590fb/files/a2eac5ba-7c41-4286-a1d0-10543ab56500.jpg"
-              alt="Ведущий занятий йогой смеха"
-              className="relative aspect-square w-full rounded-2xl object-cover shadow-xl"
+              src="/coach-vitaly.png"
+              alt="Виталий Володин — ведущий занятий йогой смеха"
+              className="relative aspect-square w-full rounded-2xl object-cover object-top shadow-xl"
               loading="lazy"
             />
           </div>
@@ -26,11 +26,11 @@ const Coach = () => {
               Ведущий
             </span>
             <h2 className="font-head text-3xl font-black uppercase leading-[0.95] md:text-5xl">
-              Марина Смехова
+              Виталий Володин
             </h2>
             <p className="mt-5 max-w-xl text-lg font-semibold leading-snug text-hero-accent/80">
-              «Я пришла в йогу смеха выгоревшей и уставшей — а осталась, потому что
-              впервые за годы почувствовала лёгкость. Теперь помогаю людям
+              «Я пришёл в йогу смеха выгоревшим и уставшим — а остался, потому что
+              впервые за годы почувствовал лёгкость. Теперь помогаю людям
               Екатеринбурга находить эту лёгкость за один час.»
             </p>
 
