@@ -32,7 +32,7 @@ const Hero = () => {
       <div className="relative z-10 flex flex-1 items-center justify-center px-5">
         <div className="flex max-w-2xl -rotate-2 flex-col items-center gap-5 text-center">
           <span className="animate-fade-in rounded bg-hero-line px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-hero-text md:text-sm">
-            на группу — до 12&nbsp;человек · Екатеринбург
+            в группе — 15–20&nbsp;человек · Екатеринбург
           </span>
 
           <h1 className="animate-fade-in font-head text-4xl font-black uppercase leading-[0.95] tracking-tight text-hero-text drop-shadow-[0_3px_0_var(--hero-x-line)] sm:text-5xl md:text-7xl">
