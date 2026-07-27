@@ -66,14 +66,14 @@ const Header = () => {
       </div>
 
       {open && (
-        <div className="animate-fade-in border-t border-hero-line/60 bg-hero-bg/98 px-5 pb-6 pt-2 lg:hidden">
+        <div className="animate-fade-in border-t border-white/10 bg-hero-accent px-5 pb-6 pt-2 lg:hidden">
           <nav className="flex flex-col">
             {NAV.map((n) => (
               <a
                 key={n.href}
                 href={n.href}
                 onClick={() => setOpen(false)}
-                className="border-b border-hero-line/40 py-3 text-sm font-medium uppercase tracking-[0.16em] text-hero-muted"
+                className="border-b border-white/10 py-3 text-sm font-medium uppercase tracking-[0.16em] text-hero-muted transition-colors hover:text-hero-text"
               >
                 {n.label}
               </a>
@@ -81,7 +81,7 @@ const Header = () => {
             <a
               href="#book"
               onClick={() => setOpen(false)}
-              className="mt-4 rounded-full bg-hero-accent py-3 text-center font-head font-extrabold text-hero-contrast"
+              className="mt-4 rounded-full bg-[var(--hero-x-ho)] py-3 text-center font-head font-extrabold text-hero-accent"
             >
               Записаться
             </a>
