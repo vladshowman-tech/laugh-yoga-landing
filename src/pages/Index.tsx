@@ -1,15 +1,31 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import Header from '@/components/site/Header';
+import Hero from '@/components/site/Hero';
+import WhatIs from '@/components/site/WhatIs';
+import HowItGoes from '@/components/site/HowItGoes';
+import Benefits from '@/components/site/Benefits';
+import Coach from '@/components/site/Coach';
+import Reviews from '@/components/site/Reviews';
+import Pricing from '@/components/site/Pricing';
+import Faq from '@/components/site/Faq';
+import Booking from '@/components/site/Booking';
+import Footer from '@/components/site/Footer';
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4 color-black text-black">Добро пожаловать!</h1>
-        <p className="text-xl text-gray-600">тут будет отображаться ваш проект</p>
-      </div>
-      <span className="absolute bottom-8 left-1/2 -translate-x-1/2 inline-block bg-[#FF6637] text-white text-sm px-4 py-2 rounded-full whitespace-nowrap">
-        Подождите 5 минут, Юра создает первую версию проекта с нуля
-      </span>
+    <div className="min-h-screen bg-hero-bg font-body">
+      <Header />
+      <main>
+        <Hero />
+        <WhatIs />
+        <HowItGoes />
+        <Benefits />
+        <Coach />
+        <Reviews />
+        <Pricing />
+        <Faq />
+        <Booking />
+      </main>
+      <Footer />
     </div>
   );
 };

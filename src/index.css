@@ -4,35 +4,55 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* ── Hero raw tokens (истина hero-варианта) ── */
+    --hero-bg: #ce3a12;
+    --hero-surface: #f4a500;
+    --hero-text: #fff6e4;
+    --hero-muted: #ffd59e;
+    --hero-accent: #1c1206;
+    --hero-accent-contrast: #ffd100;
+    --hero-radius: 999px;
+    --hero-x-ho: #ffd100;
+    --hero-x-ha: #1c1206;
+    --hero-x-tilt: #f4a500;
+    --hero-x-stroke: #fff3d6;
+    --hero-x-line: #c93408;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* ── shadcn tokens, mapped to hero palette ── */
+    /* background: #CE3A12 red */
+    --background: 12 84% 44%;
+    --foreground: 40 100% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    /* card: darker red surface */
+    --card: 12 89% 41%;
+    --card-foreground: 40 100% 95%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --popover: 20 79% 8%;
+    --popover-foreground: 40 100% 95%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* primary: near-black brown w/ gold text (matches hero .btn) */
+    --primary: 30 76% 7%;
+    --primary-foreground: 51 100% 50%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* secondary: gold #F4A500 */
+    --secondary: 41 100% 48%;
+    --secondary-foreground: 30 76% 7%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --muted: 12 60% 55%;
+    --muted-foreground: 36 100% 81%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* accent: gold */
+    --accent: 51 100% 50%;
+    --accent-foreground: 30 76% 7%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 45%;
+    --destructive-foreground: 40 100% 95%;
 
-    --radius: 0.5rem;
+    --border: 12 55% 34%;
+    --input: 12 55% 34%;
+    --ring: 51 100% 50%;
+
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -97,5 +117,58 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: "Oswald", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer utilities {
+  .font-head {
+    font-family: "Unbounded", sans-serif;
+  }
+  .font-body {
+    font-family: "Oswald", sans-serif;
+  }
+  .text-stroke {
+    color: transparent;
+    -webkit-text-stroke: 3px var(--hero-x-stroke);
+  }
+}
+
+@layer components {
+  /* Стена смеха — плавающие слоги из hero */
+  @keyframes breathe {
+    0%,
+    100% {
+      transform: translateY(0) rotate(var(--r, 0deg));
+    }
+    50% {
+      transform: translateY(-8px) rotate(var(--r, 0deg));
+    }
+  }
+  .float {
+    animation: breathe 4.5s ease-in-out infinite;
+  }
+  .f2 {
+    animation-delay: -1.2s;
+  }
+  .f3 {
+    animation-delay: -2.4s;
+  }
+  .f4 {
+    animation-delay: -3.1s;
+  }
+  .r180 {
+    --r: 180deg;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .float {
+      animation: none;
+    }
   }
 }
