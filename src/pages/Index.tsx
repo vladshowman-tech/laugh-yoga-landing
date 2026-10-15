@@ -33,7 +33,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-hero-bg font-body">
-      <Header showSchedule={data.schedule?.enabled !== false} />
+      <Header showSchedule={data.schedule?.enabled !== false && (data.schedule?.events?.length ?? 0) > 0} />
       <main>
         <Hero data={data.hero || {}} />
         <WhatIs data={data.what || {}} />

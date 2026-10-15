@@ -141,21 +141,7 @@ export const SECTIONS: SectionDef[] = [
       { kind: 'bool', key: 'enabled', label: 'Показывать раздел на сайте' },
       { kind: 'text', key: 'badge', label: 'Плашка' },
       { kind: 'text', key: 'title', label: 'Заголовок' },
-      { kind: 'textarea', key: 'text', label: 'Описание' },
-      {
-        kind: 'list',
-        key: 'items',
-        label: 'Занятия',
-        addLabel: 'Добавить занятие',
-        itemTitleKey: 'day',
-        empty: { day: '', time: '', title: '', place: '' },
-        fields: [
-          { kind: 'text', key: 'day', label: 'День недели или дата' },
-          { kind: 'text', key: 'time', label: 'Время' },
-          { kind: 'text', key: 'title', label: 'Название группы' },
-          { kind: 'text', key: 'place', label: 'Место' },
-        ],
-      },
+      { kind: 'textarea', key: 'text', label: 'Описание (сами занятия добавляются во вкладке «Расписание»)' },
     ],
   },
   {

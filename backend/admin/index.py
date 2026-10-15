@@ -4,6 +4,7 @@ import hmac
 import json
 import os
 import secrets
+from datetime import datetime, timedelta, timezone
 
 import boto3
 import psycopg2
@@ -105,6 +106,54 @@ def handler(event: dict, context) -> dict:
                 f'ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()',
                 (key, Json(body['value'])),
             )
+            return resp(200, {'ok': True})
+
+        if action == 'list_events':
+            now_local = datetime.now(timezone(timedelta(hours=5))).strftime('%Y-%m-%d %H:%M:%S')
+            cur.execute(
+                f"SELECT id, event_date, time_start, time_end, place, title, address, "
+                f"(event_date + COALESCE(time_end, time_start)) < '{now_local}'::timestamp AS archived "
+                f"FROM {schema}.events ORDER BY event_date DESC, time_start DESC LIMIT 500"
+            )
+            items = []
+            for r in cur.fetchall():
+                items.append({
+                    'id': r[0],
+                    'date': r[1].isoformat(),
+                    'time_start': r[2].strftime('%H:%M'),
+                    'time_end': r[3].strftime('%H:%M') if r[3] else '',
+                    'place': r[4],
+                    'title': r[5],
+                    'address': r[6],
+                    'archived': r[7],
+                })
+            return resp(200, {'items': items})
+
+        if action in ('add_event', 'update_event'):
+            date = str(body.get('date', ''))
+            time_start = str(body.get('time_start', ''))
+            time_end = str(body.get('time_end', '')) or None
+            place = str(body.get('place', '')).strip()[:200]
+            title = str(body.get('title', '')).strip()[:200]
+            address = str(body.get('address', '')).strip()[:300]
+            if not date or not time_start or not place:
+                return resp(400, {'error': 'Укажите дату, время начала и место'})
+            if action == 'add_event':
+                cur.execute(
+                    f'INSERT INTO {schema}.events (event_date, time_start, time_end, place, title, address) '
+                    f'VALUES (%s, %s, %s, %s, %s, %s)',
+                    (date, time_start, time_end, place, title, address),
+                )
+            else:
+                cur.execute(
+                    f'UPDATE {schema}.events SET event_date=%s, time_start=%s, time_end=%s, place=%s, title=%s, address=%s '
+                    f'WHERE id=%s',
+                    (date, time_start, time_end, place, title, address, int(body.get('id', 0))),
+                )
+            return resp(200, {'ok': True})
+
+        if action == 'delete_event':
+            cur.execute(f'DELETE FROM {schema}.events WHERE id = %s', (int(body.get('id', 0)),))
             return resp(200, {'ok': True})
 
         if action == 'list_bookings':

@@ -6,10 +6,12 @@ import { useToast } from '@/hooks/use-toast';
 import { AuthError, adminCall, clearToken, getToken, setToken } from '@/components/admin/adminApi';
 import ContentTab from '@/components/admin/ContentTab';
 import BookingsTab from '@/components/admin/BookingsTab';
+import ScheduleTab from '@/components/admin/ScheduleTab';
 import AdminsTab from '@/components/admin/AdminsTab';
 
 const TABS = [
   { key: 'content', title: 'Содержимое сайта', icon: 'FileText' },
+  { key: 'schedule', title: 'Расписание', icon: 'CalendarDays' },
   { key: 'bookings', title: 'Заявки', icon: 'Inbox' },
   { key: 'admins', title: 'Администраторы', icon: 'Users' },
 ];
@@ -132,6 +134,7 @@ const Admin = () => {
 
       <main className="mx-auto max-w-6xl px-5 py-6">
         {tab === 'content' && <ContentTab />}
+        {tab === 'schedule' && <ScheduleTab />}
         {tab === 'bookings' && <BookingsTab />}
         {tab === 'admins' && <AdminsTab />}
       </main>

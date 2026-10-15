@@ -1,8 +1,16 @@
 import Icon from '@/components/ui/icon';
 
+const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+const DAYS = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+
+const parseDate = (iso: string) => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return { d, month: MONTHS[m - 1], weekday: DAYS[new Date(y, m - 1, d).getDay()] };
+};
+
 const Schedule = ({ data }: { data: any }) => {
-  const items: any[] = data.items || [];
-  if (data.enabled === false || items.length === 0) return null;
+  const events: any[] = data.events || [];
+  if (data.enabled === false || events.length === 0) return null;
 
   return (
     <section id="schedule" className="bg-hero-surface py-20 text-hero-accent md:py-28">
@@ -21,32 +29,48 @@ const Schedule = ({ data }: { data: any }) => {
           )}
         </div>
 
-        <div className="grid gap-5 md:grid-cols-3">
-          {items.map((s, i) => (
-            <div
-              key={i}
-              className="flex flex-col rounded-3xl bg-hero-bg p-7 text-hero-text transition-transform hover:-translate-y-1"
-            >
-              <div className="font-head text-2xl font-black uppercase text-[var(--hero-x-ho)]">
-                {s.day}
-              </div>
-              <div className="mt-1 flex items-center gap-2 font-head text-3xl font-black">
-                <Icon name="Clock" size={24} />
-                {s.time}
-              </div>
-              <div className="mt-4 font-head text-lg font-extrabold">{s.title}</div>
-              <div className="mt-1 flex items-start gap-2 text-sm font-medium text-hero-muted">
-                <Icon name="MapPin" size={16} className="mt-0.5 shrink-0" />
-                {s.place}
-              </div>
-              <a
-                href="#book"
-                className="mt-6 inline-flex items-center justify-center rounded-full bg-[var(--hero-x-ho)] px-6 py-3 font-head font-extrabold text-hero-accent transition-transform hover:-translate-y-0.5"
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {events.map((e) => {
+            const dt = parseDate(e.date);
+            return (
+              <div
+                key={e.id}
+                className="flex flex-col rounded-3xl bg-hero-bg p-7 text-hero-text transition-transform hover:-translate-y-1"
               >
-                Записаться
-              </a>
-            </div>
-          ))}
+                <div className="flex items-baseline gap-2">
+                  <span className="font-head text-5xl font-black text-[var(--hero-x-ho)]">{dt.d}</span>
+                  <span className="font-head text-xl font-extrabold uppercase">{dt.month}</span>
+                </div>
+                <div className="text-sm font-semibold uppercase tracking-wide text-hero-muted">{dt.weekday}</div>
+
+                <div className="mt-3 flex items-center gap-2 font-head text-2xl font-black">
+                  <Icon name="Clock" size={22} />
+                  {e.time_start}
+                  {e.time_end && <span className="text-hero-muted">– {e.time_end}</span>}
+                </div>
+
+                {e.title && <div className="mt-4 font-head text-lg font-extrabold">{e.title}</div>}
+
+                <div className="mt-2 flex items-start gap-2 text-sm font-semibold">
+                  <Icon name="Building2" size={16} className="mt-0.5 shrink-0 text-[var(--hero-x-ho)]" />
+                  {e.place}
+                </div>
+                {e.address && (
+                  <div className="mt-1 flex items-start gap-2 text-sm font-medium text-hero-muted">
+                    <Icon name="MapPin" size={16} className="mt-0.5 shrink-0" />
+                    {e.address}
+                  </div>
+                )}
+
+                <a
+                  href="#book"
+                  className="mt-6 inline-flex items-center justify-center rounded-full bg-[var(--hero-x-ho)] px-6 py-3 font-head font-extrabold text-hero-accent transition-transform hover:-translate-y-0.5"
+                >
+                  Записаться
+                </a>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

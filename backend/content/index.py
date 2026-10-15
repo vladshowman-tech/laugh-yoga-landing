@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime, timedelta, timezone
 
 import psycopg2
 
@@ -25,6 +26,25 @@ def handler(event: dict, context) -> dict:
     cur = conn.cursor()
     cur.execute(f'SELECT key, value FROM {schema}.site_content')
     data = {k: v for k, v in cur.fetchall()}
+
+    now_local = datetime.now(timezone(timedelta(hours=5))).strftime('%Y-%m-%d %H:%M:%S')
+    cur.execute(
+        f"SELECT id, event_date, time_start, time_end, place, title, address FROM {schema}.events "
+        f"WHERE (event_date + COALESCE(time_end, time_start)) >= '{now_local}'::timestamp "
+        f"ORDER BY event_date, time_start LIMIT 50"
+    )
+    events = []
+    for r in cur.fetchall():
+        events.append({
+            'id': r[0],
+            'date': r[1].isoformat(),
+            'time_start': r[2].strftime('%H:%M'),
+            'time_end': r[3].strftime('%H:%M') if r[3] else '',
+            'place': r[4],
+            'title': r[5],
+            'address': r[6],
+        })
+    data.setdefault('schedule', {})['events'] = events
     cur.close()
     conn.close()
 
