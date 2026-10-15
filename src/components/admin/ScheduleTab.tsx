@@ -15,9 +15,11 @@ interface EventItem {
   title: string;
   address: string;
   archived: boolean;
+  capacity: number | null;
+  taken: number;
 }
 
-const EMPTY = { id: 0, date: '', time_start: '', time_end: '', place: '', title: '', address: '' };
+const EMPTY = { id: 0, date: '', time_start: '', time_end: '', place: '', title: '', address: '', capacity: '' as string | number | null };
 
 const fmtDate = (iso: string) => {
   const [y, m, d] = iso.split('-');
@@ -34,6 +36,21 @@ const EventCard = ({ e, onEdit, onDelete, onCopy }: { e: EventItem; onEdit: () =
       </div>
       <div className="mt-1 text-sm text-slate-700">{e.place}</div>
       {e.address && <div className="text-sm text-slate-500">{e.address}</div>}
+      <div className="mt-1.5">
+        {e.capacity ? (
+          <span
+            className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+              e.taken >= e.capacity ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+            }`}
+          >
+            {e.taken >= e.capacity ? 'Мест нет' : `Свободно ${e.capacity - e.taken}`} · занято {e.taken} из {e.capacity}
+          </span>
+        ) : (
+          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
+            Без лимита · записалось {e.taken}
+          </span>
+        )}
+      </div>
     </div>
     <div className="flex shrink-0 gap-1">
       <Button variant="ghost" size="icon" title="Копировать" onClick={onCopy}>
@@ -140,6 +157,17 @@ const ScheduleTab = () => {
                   value={form.title}
                   onChange={(e) => set('title', e.target.value)}
                 />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-semibold text-slate-800">Лимит мест</label>
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="Без ограничений"
+                  value={form.capacity ?? ''}
+                  onChange={(e) => set('capacity', e.target.value)}
+                />
+                <span className="text-xs text-slate-500">Оставьте пустым, если мест неограниченно</span>
               </div>
               <div className="flex flex-col gap-1.5 md:col-span-3">
                 <label className="text-sm font-semibold text-slate-800">Адрес</label>

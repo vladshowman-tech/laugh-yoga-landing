@@ -111,9 +111,11 @@ def handler(event: dict, context) -> dict:
         if action == 'list_events':
             now_local = datetime.now(timezone(timedelta(hours=5))).strftime('%Y-%m-%d %H:%M:%S')
             cur.execute(
-                f"SELECT id, event_date, time_start, time_end, place, title, address, "
-                f"(event_date + COALESCE(time_end, time_start)) < '{now_local}'::timestamp AS archived "
-                f"FROM {schema}.events ORDER BY event_date DESC, time_start DESC LIMIT 500"
+                f"SELECT e.id, e.event_date, e.time_start, e.time_end, e.place, e.title, e.address, "
+                f"(e.event_date + COALESCE(e.time_end, e.time_start)) < '{now_local}'::timestamp AS archived, "
+                f"e.capacity, "
+                f"(SELECT COUNT(*) FROM {schema}.bookings b WHERE b.event_id = e.id AND b.status <> 'cancelled') AS taken "
+                f"FROM {schema}.events e ORDER BY e.event_date DESC, e.time_start DESC LIMIT 500"
             )
             items = []
             for r in cur.fetchall():
@@ -126,6 +128,8 @@ def handler(event: dict, context) -> dict:
                     'title': r[5],
                     'address': r[6],
                     'archived': r[7],
+                    'capacity': r[8],
+                    'taken': int(r[9]),
                 })
             return resp(200, {'items': items})
 
@@ -138,17 +142,24 @@ def handler(event: dict, context) -> dict:
             address = str(body.get('address', '')).strip()[:300]
             if not date or not time_start or not place:
                 return resp(400, {'error': 'Укажите дату, время начала и место'})
+            raw_capacity = body.get('capacity')
+            try:
+                capacity = int(raw_capacity) if raw_capacity not in (None, '') else None
+            except (TypeError, ValueError):
+                return resp(400, {'error': 'Лимит мест должен быть числом'})
+            if capacity is not None and capacity < 1:
+                return resp(400, {'error': 'Лимит мест должен быть больше нуля'})
             if action == 'add_event':
                 cur.execute(
-                    f'INSERT INTO {schema}.events (event_date, time_start, time_end, place, title, address) '
-                    f'VALUES (%s, %s, %s, %s, %s, %s)',
-                    (date, time_start, time_end, place, title, address),
+                    f'INSERT INTO {schema}.events (event_date, time_start, time_end, place, title, address, capacity) '
+                    f'VALUES (%s, %s, %s, %s, %s, %s, %s)',
+                    (date, time_start, time_end, place, title, address, capacity),
                 )
             else:
                 cur.execute(
-                    f'UPDATE {schema}.events SET event_date=%s, time_start=%s, time_end=%s, place=%s, title=%s, address=%s '
+                    f'UPDATE {schema}.events SET event_date=%s, time_start=%s, time_end=%s, place=%s, title=%s, address=%s, capacity=%s '
                     f'WHERE id=%s',
-                    (date, time_start, time_end, place, title, address, int(body.get('id', 0))),
+                    (date, time_start, time_end, place, title, address, capacity, int(body.get('id', 0))),
                 )
             return resp(200, {'ok': True})
 

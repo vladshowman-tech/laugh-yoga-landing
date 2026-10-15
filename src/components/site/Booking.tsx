@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import Icon from '@/components/ui/icon';
 import { useToast } from '@/hooks/use-toast';
 import { BOOKING_URL } from '@/lib/api';
@@ -16,6 +17,7 @@ const EMPTY_FORM = { name: '', phone: '', slot: '', event_id: 0 };
 const Booking = ({ data, events = [] }: { data: any; events?: any[] }) => {
   const CONTACTS: { icon: string; label: string; sub: string }[] = data.items || [];
   const { toast } = useToast();
+  const qc = useQueryClient();
   const [sending, setSending] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
@@ -48,7 +50,18 @@ const Booking = ({ data, events = [] }: { data: any; events?: any[] }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
+      if (res.status === 409) {
+        await qc.invalidateQueries({ queryKey: ['site-content'] });
+        setForm((f) => ({ ...f, event_id: 0 }));
+        toast({
+          title: 'На это занятие мест уже нет',
+          description: 'Выберите другое занятие из списка.',
+          variant: 'destructive',
+        });
+        return;
+      }
       if (!res.ok) throw new Error('send failed');
+      await qc.invalidateQueries({ queryKey: ['site-content'] });
       toast({
         title: 'Заявка принята!',
         description: `${form.name}, мы перезвоним и подтвердим место в группе.`,
@@ -151,8 +164,9 @@ const Booking = ({ data, events = [] }: { data: any; events?: any[] }) => {
                   <>
                     <option value="">Пока не выбрал(а)</option>
                     {events.map((ev) => (
-                      <option key={ev.id} value={`event:${ev.id}`}>
+                      <option key={ev.id} value={`event:${ev.id}`} disabled={ev.left === 0}>
                         {eventLabel(ev)}
+                        {ev.left === 0 ? ' — мест нет' : ev.left != null ? ` (осталось ${ev.left})` : ''}
                       </option>
                     ))}
                     <option value="other">Другое время — свяжитесь со мной</option>

@@ -1,0 +1,1 @@
+ALTER TABLE t_p76941956_laugh_yoga_landing.events ADD COLUMN IF NOT EXISTS capacity INTEGER;

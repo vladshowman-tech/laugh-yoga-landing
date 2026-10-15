@@ -55,9 +55,22 @@ def handler(event: dict, context) -> dict:
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
         cur = conn.cursor()
         cur.execute(
-            f'SELECT event_date, time_start, place, title, address FROM {schema}.events WHERE id = {raw_event_id}'
+            f'SELECT event_date, time_start, place, title, address, capacity FROM {schema}.events WHERE id = {raw_event_id}'
         )
         row = cur.fetchone()
+        if row and row[5]:
+            cur.execute(
+                f"SELECT COUNT(*) FROM {schema}.bookings WHERE event_id = {raw_event_id} AND status <> 'cancelled'"
+            )
+            taken = cur.fetchone()[0]
+            if taken >= row[5]:
+                cur.close()
+                conn.close()
+                return {
+                    'statusCode': 409,
+                    'headers': HEADERS,
+                    'body': json.dumps({'error': 'sold_out'}),
+                }
         cur.close()
         conn.close()
         if row:

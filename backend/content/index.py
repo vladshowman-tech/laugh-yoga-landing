@@ -29,12 +29,16 @@ def handler(event: dict, context) -> dict:
 
     now_local = datetime.now(timezone(timedelta(hours=5))).strftime('%Y-%m-%d %H:%M:%S')
     cur.execute(
-        f"SELECT id, event_date, time_start, time_end, place, title, address FROM {schema}.events "
-        f"WHERE (event_date + COALESCE(time_end, time_start)) >= '{now_local}'::timestamp "
-        f"ORDER BY event_date, time_start LIMIT 50"
+        f"SELECT e.id, e.event_date, e.time_start, e.time_end, e.place, e.title, e.address, e.capacity, "
+        f"(SELECT COUNT(*) FROM {schema}.bookings b WHERE b.event_id = e.id AND b.status <> 'cancelled') AS taken "
+        f"FROM {schema}.events e "
+        f"WHERE (e.event_date + COALESCE(e.time_end, e.time_start)) >= '{now_local}'::timestamp "
+        f"ORDER BY e.event_date, e.time_start LIMIT 50"
     )
     events = []
     for r in cur.fetchall():
+        capacity = r[7]
+        taken = int(r[8])
         events.append({
             'id': r[0],
             'date': r[1].isoformat(),
@@ -43,6 +47,8 @@ def handler(event: dict, context) -> dict:
             'place': r[4],
             'title': r[5],
             'address': r[6],
+            'capacity': capacity,
+            'left': max(capacity - taken, 0) if capacity else None,
         })
     data.setdefault('schedule', {})['events'] = events
     cur.close()
