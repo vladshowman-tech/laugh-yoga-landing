@@ -18,6 +18,11 @@ const Footer = () => {
               Йога смеха в Екатеринбурге. Садись на мягкий пол · дыши ·
               «хо-хо, ха-ха».
             </p>
+            <p className="mt-3 text-xs font-medium leading-relaxed text-hero-muted">
+              ИП Володин Виталий Эдуардович
+              <br />
+              ОГРНИП 325665800163492
+            </p>
           </div>
 
           <div className="flex gap-3">
