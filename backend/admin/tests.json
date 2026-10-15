@@ -1,0 +1,1 @@
+{"tests": [{"name": "Wrong login rejected", "method": "POST", "path": "/", "body": {"action": "login", "username": "nobody", "password": "x"}, "expectedStatus": 401}, {"name": "No token rejected", "method": "POST", "path": "/", "body": {"action": "me"}, "expectedStatus": 401}]}

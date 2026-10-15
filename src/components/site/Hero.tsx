@@ -10,7 +10,7 @@ const SYLLABLES = [
   { text: 'ХА', cls: 'text-[var(--hero-x-ho)] text-[5rem] md:text-[9rem]', pos: 'bottom-8 left-6 md:left-10', anim: 'float f3' },
 ];
 
-const Hero = () => {
+const Hero = ({ data }: { data: any }) => {
   return (
     <section
       id="top"
@@ -32,19 +32,18 @@ const Hero = () => {
       <div className="relative z-10 flex flex-1 items-center justify-center px-5">
         <div className="flex max-w-2xl -rotate-2 flex-col items-center gap-5 text-center">
           <span className="animate-fade-in rounded bg-hero-line px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-hero-text md:text-sm">
-            в группе — 15–20&nbsp;человек · Екатеринбург
+            {data.badge}
           </span>
 
           <h1 className="animate-fade-in font-head text-4xl font-black uppercase leading-[0.95] tracking-tight text-hero-text drop-shadow-[0_3px_0_var(--hero-x-line)] sm:text-5xl md:text-7xl">
-            Ржать полезно
+            {data.title}
           </h1>
 
           <p
             className="animate-fade-in max-w-lg text-lg font-medium leading-snug text-hero-text [text-shadow:0_2px_0_var(--hero-x-line)] md:text-xl"
             style={{ animationDelay: '0.1s' }}
           >
-            100 минут хохота вместо ещё&nbsp;одного вечера с телефоном. Диафрагма
-            включается&nbsp;— мозг сам меняет кортизол на&nbsp;эндорфины.
+            {data.text}
           </p>
 
           <a
@@ -52,20 +51,20 @@ const Hero = () => {
             className="animate-fade-in mt-2 inline-flex items-center gap-3 rounded-full bg-hero-accent px-8 py-4 font-head text-lg font-extrabold text-hero-contrast transition-all duration-200 hover:-translate-y-1 hover:rotate-2 hover:shadow-xl hover:shadow-black/30"
             style={{ animationDelay: '0.2s' }}
           >
-            Хочу смеяться <span aria-hidden>→</span>
+            {data.button} <span aria-hidden>→</span>
           </a>
 
           <span
             className="animate-fade-in text-sm font-medium text-hero-text/85"
             style={{ animationDelay: '0.3s' }}
           >
-            Занятие — 700&nbsp;₽. Не смешно — второе бесплатно.
+            {data.note}
           </span>
         </div>
       </div>
 
       <span className="relative z-10 px-5 pb-6 text-center text-xs font-medium uppercase tracking-[0.14em] text-hero-muted md:px-10 md:text-left">
-        садись на мягкий пол · дыши · «хо-хо, ха-ха»
+        {data.hint}
       </span>
     </section>
   );

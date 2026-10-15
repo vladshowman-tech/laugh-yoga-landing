@@ -1,45 +1,25 @@
 import { useState } from 'react';
 import Icon from '@/components/ui/icon';
 
-const REVIEWS = [
-  {
-    name: 'Ольга',
-    role: 'бухгалтер, 34',
-    text: 'Шла со скепсисом — «как это смеяться по команде?». Через десять минут ржала так, что болел живот. Впервые за год выключилась голова.',
-  },
-  {
-    name: 'Дмитрий',
-    role: 'айтишник, 29',
-    text: 'Отличная перезагрузка после недели за монитором. Уходишь пустой в хорошем смысле, спишь потом как в детстве.',
-  },
-  {
-    name: 'Наталья',
-    role: 'мама в декрете, 38',
-    text: 'Мой личный час без телефона и без забот. Группа тёплая, ведущий бережный. Хожу как на терапию, только весело.',
-  },
-  {
-    name: 'Сергей',
-    role: 'предприниматель, 45',
-    text: 'Привёл всю команду на корпоратив — работали потом дружнее. Оказалось, вместе поржать полезнее любого тимбилдинга.',
-  },
-];
-
-const Reviews = () => {
+const Reviews = ({ data }: { data: any }) => {
   const [i, setI] = useState(0);
-  const total = REVIEWS.length;
+  const items: any[] = data.items || [];
+  const total = items.length;
+  if (total === 0) return null;
+  const cur = Math.min(i, total - 1);
   const prev = () => setI((p) => (p - 1 + total) % total);
   const next = () => setI((p) => (p + 1) % total);
-  const r = REVIEWS[i];
+  const r = items[cur];
 
   return (
     <section id="reviews" className="bg-hero-bg py-20 md:py-28">
       <div className="mx-auto max-w-4xl px-5 md:px-10">
         <div className="mb-12 text-center">
           <span className="mb-4 inline-block rounded bg-hero-line px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-hero-text">
-            Отзывы
+            {data.badge}
           </span>
           <h2 className="font-head text-3xl font-black uppercase leading-[0.95] text-hero-text md:text-5xl">
-            Люди <span className="text-[var(--hero-x-ho)]">после</span> занятия
+            {data.title} <span className="text-[var(--hero-x-ho)]">{data.title_accent}</span> {data.title_end}
           </h2>
         </div>
 
@@ -77,13 +57,13 @@ const Reviews = () => {
         </div>
 
         <div className="mt-6 flex justify-center gap-2">
-          {REVIEWS.map((_, idx) => (
+          {items.map((_, idx) => (
             <button
               key={idx}
               aria-label={`Отзыв ${idx + 1}`}
               onClick={() => setI(idx)}
               className={`h-2.5 rounded-full transition-all ${
-                idx === i ? 'w-7 bg-[var(--hero-x-ho)]' : 'w-2.5 bg-hero-line'
+                idx === cur ? 'w-7 bg-[var(--hero-x-ho)]' : 'w-2.5 bg-hero-line'
               }`}
             />
           ))}

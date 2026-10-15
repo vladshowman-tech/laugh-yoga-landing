@@ -1,49 +1,22 @@
 import Icon from '@/components/ui/icon';
 
-const PLANS = [
-  {
-    name: 'Пробное',
-    price: '700 ₽',
-    unit: 'одно занятие',
-    note: 'Не смешно — второе бесплатно',
-    features: ['100 минут практики', 'Всё оборудование включено', 'Знакомство с методом'],
-    highlight: false,
-  },
-  {
-    name: 'Абонемент',
-    price: '3 500 ₽',
-    unit: '5 занятий',
-    note: 'Самый популярный',
-    features: ['5 занятий в удобные дни', 'Заморозка на болезнь', 'Место в группе за вами'],
-    highlight: true,
-  },
-  {
-    name: 'Корпоратив',
-    price: 'от 12 000 ₽',
-    unit: 'выезд на команду',
-    note: 'До 20 человек',
-    features: ['Выезд в ваш офис или зал', 'Программа под задачу', 'Тимбилдинг без неловкости', 'Гибкое время'],
-    highlight: false,
-  },
-];
-
-const Pricing = () => {
+const Pricing = ({ data }: { data: any }) => {
   return (
     <section id="price" className="bg-hero-surface py-20 text-hero-accent md:py-28">
       <div className="mx-auto max-w-6xl px-5 md:px-10">
         <div className="mb-14 text-center">
           <span className="mb-4 inline-block rounded bg-hero-accent px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-hero-contrast">
-            Цены
+            {data.badge}
           </span>
           <h2 className="font-head text-3xl font-black uppercase leading-[0.95] md:text-5xl">
-            Выбирайте формат
+            {data.title}
           </h2>
         </div>
 
         <div className="grid items-stretch gap-6 md:grid-cols-3">
-          {PLANS.map((p) => (
+          {(data.plans || []).map((p: any, idx: number) => (
             <div
-              key={p.name}
+              key={idx}
               className={`flex flex-col rounded-3xl p-8 transition-transform hover:-translate-y-1 ${
                 p.highlight
                   ? 'bg-hero-accent text-hero-text shadow-2xl md:-translate-y-3'
@@ -70,8 +43,8 @@ const Pricing = () => {
               </span>
 
               <ul className="mt-6 flex flex-1 flex-col gap-3">
-                {p.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 font-semibold">
+                {(p.features || []).map((f: string, fi: number) => (
+                  <li key={fi} className="flex items-start gap-2.5 font-semibold">
                     <Icon
                       name="Check"
                       size={18}
@@ -90,7 +63,7 @@ const Pricing = () => {
                     : 'bg-hero-accent text-hero-contrast'
                 }`}
               >
-                Записаться
+                {data.button}
               </a>
             </div>
           ))}

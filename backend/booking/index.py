@@ -2,6 +2,8 @@ import json
 import os
 import threading
 import urllib.request
+
+import psycopg2
 from datetime import datetime, timedelta, timezone
 
 SLOTS = {
@@ -41,6 +43,17 @@ def handler(event: dict, context) -> dict:
 
     results = {}
 
+    def save_db():
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        conn.autocommit = True
+        cur = conn.cursor()
+        cur.execute(
+            f"INSERT INTO {os.environ['MAIN_DB_SCHEMA']}.bookings (name, phone, slot) VALUES (%s, %s, %s)",
+            (name, phone, slot),
+        )
+        cur.close()
+        conn.close()
+
     def send_telegram():
         text = f'Новая заявка на занятие\n\nИмя: {name}\nТелефон: {phone}\nУдобное время: {slot}'
         token = os.environ['TELEGRAM_BOT_TOKEN']
@@ -75,6 +88,7 @@ def handler(event: dict, context) -> dict:
             results[key] = False
 
     threads = [
+        threading.Thread(target=run, args=('db', save_db)),
         threading.Thread(target=run, args=('telegram', send_telegram)),
         threading.Thread(target=run, args=('sheet', send_sheet)),
     ]

@@ -1,16 +1,10 @@
 import { useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { useToast } from '@/hooks/use-toast';
+import { BOOKING_URL } from '@/lib/api';
 
-const CONTACTS = [
-  { icon: 'MapPin', label: 'Студия в центре Екатеринбурга', sub: 'Адрес пришлём после записи' },
-  { icon: 'Phone', label: '+7 (343) 000-00-00', sub: 'Пн–Вс, 10:00–21:00' },
-  { icon: 'Send', label: '@hohohaha_ekb', sub: 'Пишите в Telegram' },
-];
-
-const BOOKING_URL = 'https://functions.poehali.dev/2faff983-eeea-49c6-8dc8-98181cb2ffd7';
-
-const Booking = () => {
+const Booking = ({ data }: { data: any }) => {
+  const CONTACTS: { icon: string; label: string; sub: string }[] = data.items || [];
   const { toast } = useToast();
   const [sending, setSending] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', slot: '' });
@@ -59,22 +53,21 @@ const Booking = () => {
         <div className="grid gap-12 lg:grid-cols-[1fr_1fr]">
           <div>
             <span className="mb-4 inline-block rounded bg-[var(--hero-x-ho)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-hero-accent">
-              Запись
+              {data.badge}
             </span>
             <h2 className="font-head text-3xl font-black uppercase leading-[0.95] md:text-5xl">
-              Приходите{' '}
-              <span className="text-[var(--hero-x-ho)]">смеяться</span>
+              {data.title}{' '}
+              <span className="text-[var(--hero-x-ho)]">{data.title_accent}</span>
             </h2>
             <p className="mt-5 max-w-md text-lg font-medium leading-snug text-hero-muted">
-              Оставьте заявку — подберём удобное время и забронируем место в
-              ближайшей группе. Занятие всего 700&nbsp;₽.
+              {data.text}
             </p>
 
             <ul className="mt-9 flex flex-col gap-5">
-              {CONTACTS.map((c) => (
-                <li key={c.label} className="flex items-center gap-4">
+              {CONTACTS.map((c, ci) => (
+                <li key={ci} className="flex items-center gap-4">
                   <span id={c.icon === 'MapPin' ? 'contacts' : undefined} className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--hero-x-ho)] text-hero-accent">
-                    <Icon name={c.icon} size={22} />
+                    <Icon name={c.icon} fallback="Phone" size={22} />
                   </span>
                   <div>
                     <div className="font-head font-extrabold">{c.label}</div>

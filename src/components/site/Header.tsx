@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import Icon from '@/components/ui/icon';
 
-const NAV = [
+const ALL_NAV = [
   { href: '#what', label: 'Что это' },
   { href: '#how', label: 'Как идёт' },
   { href: '#benefits', label: 'Польза' },
   { href: '#coach', label: 'Ведущий' },
+  { href: '#schedule', label: 'Расписание' },
   { href: '#reviews', label: 'Отзывы' },
   { href: '#price', label: 'Цены' },
   { href: '#faq', label: 'Вопросы' },
 ];
 
-const Header = () => {
+const Header = ({ showSchedule = true }: { showSchedule?: boolean }) => {
+  const NAV = ALL_NAV.filter((n) => showSchedule || n.href !== '#schedule');
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 

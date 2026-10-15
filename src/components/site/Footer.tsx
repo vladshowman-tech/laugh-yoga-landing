@@ -1,6 +1,6 @@
 import Icon from '@/components/ui/icon';
 
-const Footer = () => {
+const Footer = ({ data }: { data: any }) => {
   return (
     <footer className="bg-hero-bg py-12">
       <div className="mx-auto max-w-6xl px-5 md:px-10">
@@ -15,13 +15,10 @@ const Footer = () => {
               </span>
             </div>
             <p className="mt-2 max-w-xs text-sm font-medium text-hero-muted">
-              Йога смеха в Екатеринбурге. Садись на мягкий пол · дыши ·
-              «хо-хо, ха-ха».
+              {data.description}
             </p>
-            <p className="mt-3 text-xs font-medium leading-relaxed text-hero-muted">
-              ИП Володин Виталий Эдуардович
-              <br />
-              ОГРНИП 325665800163492
+            <p className="mt-3 whitespace-pre-line text-xs font-medium leading-relaxed text-hero-muted">
+              {data.legal}
             </p>
           </div>
 
@@ -44,7 +41,7 @@ const Footer = () => {
 
         <div className="mt-8 flex flex-col items-start justify-between gap-2 border-t border-hero-line pt-6 text-xs font-medium uppercase tracking-wide text-hero-muted md:flex-row md:items-center">
           <span>© {new Date().getFullYear()} ХО-ХО-ХА-ХА · Екатеринбург</span>
-          <span>Ржать полезно</span>
+          <span>{data.tagline}</span>
         </div>
       </div>
     </footer>

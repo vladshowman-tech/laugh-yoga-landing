@@ -1,0 +1,1 @@
+{"tests": [{"name": "Get site content", "method": "GET", "path": "/", "expectedStatus": 200}]}
