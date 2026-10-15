@@ -19,6 +19,17 @@ interface EventItem {
   taken: number;
 }
 
+interface WaitItem {
+  id: number;
+  event_id: number;
+  name: string;
+  phone: string;
+  created_at: string;
+}
+
+const fmtDateTime = (iso: string) =>
+  new Date(iso).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
 const EMPTY = { id: 0, date: '', time_start: '', time_end: '', place: '', title: '', address: '', capacity: '' as string | number | null };
 
 const fmtDate = (iso: string) => {
@@ -26,57 +37,115 @@ const fmtDate = (iso: string) => {
   return `${d}.${m}.${y}`;
 };
 
-const EventCard = ({ e, onEdit, onDelete, onCopy }: { e: EventItem; onEdit: () => void; onDelete: () => void; onCopy: () => void }) => (
-  <div className={`flex flex-col gap-3 rounded-xl border p-4 md:flex-row md:items-center md:justify-between ${e.archived ? 'border-slate-200 bg-slate-50' : 'border-slate-300 bg-white'}`}>
-    <div>
-      <div className="font-bold text-slate-900">
-        {fmtDate(e.date)} · {e.time_start}
-        {e.time_end && `–${e.time_end}`}
-        {e.title && <span className="font-semibold text-slate-600"> · {e.title}</span>}
+const EventCard = ({
+  e,
+  waiting,
+  onEdit,
+  onDelete,
+  onCopy,
+  onRemoveWaiting,
+}: {
+  e: EventItem;
+  waiting: WaitItem[];
+  onEdit: () => void;
+  onDelete: () => void;
+  onCopy: () => void;
+  onRemoveWaiting: (id: number) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={`rounded-xl border p-4 ${e.archived ? 'border-slate-200 bg-slate-50' : 'border-slate-300 bg-white'}`}>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <div className="font-bold text-slate-900">
+            {fmtDate(e.date)} · {e.time_start}
+            {e.time_end && `–${e.time_end}`}
+            {e.title && <span className="font-semibold text-slate-600"> · {e.title}</span>}
+          </div>
+          <div className="mt-1 text-sm text-slate-700">{e.place}</div>
+          {e.address && <div className="text-sm text-slate-500">{e.address}</div>}
+          <div className="mt-1.5 flex flex-wrap gap-2">
+            {e.capacity ? (
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                  e.taken >= e.capacity ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                }`}
+              >
+                {e.taken >= e.capacity ? 'Мест нет' : `Свободно ${e.capacity - e.taken}`} · занято {e.taken} из {e.capacity}
+              </span>
+            ) : (
+              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
+                Без лимита · записалось {e.taken}
+              </span>
+            )}
+            {waiting.length > 0 && (
+              <button
+                onClick={() => setOpen((v) => !v)}
+                className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-900"
+              >
+                Лист ожидания: {waiting.length} {open ? '▲' : '▼'}
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="flex shrink-0 gap-1">
+          <Button variant="ghost" size="icon" title="Копировать" onClick={onCopy}>
+            <Icon name="Copy" size={16} />
+          </Button>
+          <Button variant="ghost" size="icon" title="Изменить" onClick={onEdit}>
+            <Icon name="Pencil" size={16} />
+          </Button>
+          <Button variant="ghost" size="icon" title="Удалить" onClick={onDelete}>
+            <Icon name="Trash2" size={16} />
+          </Button>
+        </div>
       </div>
-      <div className="mt-1 text-sm text-slate-700">{e.place}</div>
-      {e.address && <div className="text-sm text-slate-500">{e.address}</div>}
-      <div className="mt-1.5">
-        {e.capacity ? (
-          <span
-            className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-              e.taken >= e.capacity ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-            }`}
-          >
-            {e.taken >= e.capacity ? 'Мест нет' : `Свободно ${e.capacity - e.taken}`} · занято {e.taken} из {e.capacity}
-          </span>
-        ) : (
-          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
-            Без лимита · записалось {e.taken}
-          </span>
-        )}
-      </div>
+
+      {open && waiting.length > 0 && (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+          <div className="mb-2 text-sm font-bold text-slate-900">Лист ожидания, по порядку обращения</div>
+          <ol className="flex flex-col gap-2">
+            {waiting.map((w, i) => (
+              <li key={w.id} className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2">
+                <div>
+                  <span className="font-semibold text-slate-900">
+                    {i + 1}. {w.name}
+                  </span>
+                  <a href={`tel:${w.phone}`} className="ml-2 text-sm font-semibold text-blue-700">
+                    {w.phone}
+                  </a>
+                  <div className="text-xs text-slate-500">{fmtDateTime(w.created_at)}</div>
+                </div>
+                <Button variant="ghost" size="icon" title="Убрать из списка" onClick={() => onRemoveWaiting(w.id)}>
+                  <Icon name="X" size={16} />
+                </Button>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
     </div>
-    <div className="flex shrink-0 gap-1">
-      <Button variant="ghost" size="icon" title="Копировать" onClick={onCopy}>
-        <Icon name="Copy" size={16} />
-      </Button>
-      <Button variant="ghost" size="icon" title="Изменить" onClick={onEdit}>
-        <Icon name="Pencil" size={16} />
-      </Button>
-      <Button variant="ghost" size="icon" title="Удалить" onClick={onDelete}>
-        <Icon name="Trash2" size={16} />
-      </Button>
-    </div>
-  </div>
-);
+  );
+};
 
 const ScheduleTab = () => {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [items, setItems] = useState<EventItem[] | null>(null);
+  const [waitlist, setWaitlist] = useState<WaitItem[]>([]);
   const [form, setForm] = useState<typeof EMPTY | null>(null);
   const [saving, setSaving] = useState(false);
   const [showArchive, setShowArchive] = useState(false);
 
   const load = () =>
-    adminCall<{ items: EventItem[] }>('list_events')
-      .then((r) => setItems(r.items))
+    Promise.all([
+      adminCall<{ items: EventItem[] }>('list_events'),
+      adminCall<{ items: WaitItem[] }>('list_waitlist'),
+    ])
+      .then(([ev, wl]) => {
+        setItems(ev.items);
+        setWaitlist(wl.items);
+      })
       .catch((e) => toast({ title: 'Не удалось загрузить', description: e.message, variant: 'destructive' }));
 
   useEffect(() => {
@@ -106,6 +175,12 @@ const ScheduleTab = () => {
     await adminCall('delete_event', { id });
     await load();
     refreshSite();
+  };
+
+  const removeWaiting = async (id: number) => {
+    if (!window.confirm('Убрать человека из листа ожидания?')) return;
+    await adminCall('delete_waitlist', { id });
+    setWaitlist((prev) => prev.filter((w) => w.id !== id));
   };
 
   if (!items) return <p className="py-10 text-center text-slate-500">Загружаю...</p>;
@@ -197,6 +272,8 @@ const ScheduleTab = () => {
               <EventCard
                 key={e.id}
                 e={e}
+                waiting={waitlist.filter((w) => w.event_id === e.id)}
+                onRemoveWaiting={removeWaiting}
                 onEdit={() => setForm({ ...e })}
                 onDelete={() => remove(e.id)}
                 onCopy={() => setForm({ ...e, id: 0, date: '' })}
@@ -226,6 +303,8 @@ const ScheduleTab = () => {
               <EventCard
                 key={e.id}
                 e={e}
+                waiting={waitlist.filter((w) => w.event_id === e.id)}
+                onRemoveWaiting={removeWaiting}
                 onEdit={() => setForm({ ...e })}
                 onDelete={() => remove(e.id)}
                 onCopy={() => {

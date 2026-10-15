@@ -164,7 +164,17 @@ def handler(event: dict, context) -> dict:
             return resp(200, {'ok': True})
 
         if action == 'delete_event':
+            cur.execute(f'DELETE FROM {schema}.waitlist WHERE event_id = %s', (int(body.get('id', 0)),))
             cur.execute(f'DELETE FROM {schema}.events WHERE id = %s', (int(body.get('id', 0)),))
+            return resp(200, {'ok': True})
+
+        if action == 'list_waitlist':
+            cur.execute(f'SELECT id, event_id, name, phone, created_at FROM {schema}.waitlist ORDER BY created_at')
+            cols = ['id', 'event_id', 'name', 'phone', 'created_at']
+            return resp(200, {'items': [dict(zip(cols, r)) for r in cur.fetchall()]})
+
+        if action == 'delete_waitlist':
+            cur.execute(f'DELETE FROM {schema}.waitlist WHERE id = %s', (int(body.get('id', 0)),))
             return resp(200, {'ok': True})
 
         if action == 'list_bookings':

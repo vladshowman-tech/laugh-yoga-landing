@@ -1,4 +1,5 @@
 import Icon from '@/components/ui/icon';
+import WaitlistForm from './WaitlistForm';
 
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 const DAYS = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
@@ -86,9 +87,7 @@ const Schedule = ({ data }: { data: any }) => {
                 )}
 
                 {e.left === 0 ? (
-                  <span className="mt-6 inline-flex items-center justify-center rounded-full border-2 border-hero-line px-6 py-3 font-head font-extrabold text-hero-muted">
-                    Запись закрыта
-                  </span>
+                  <WaitlistForm eventId={e.id} />
                 ) : (
                   <a
                     href="#book"

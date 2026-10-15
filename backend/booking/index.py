@@ -17,6 +17,74 @@ SLOTS = {
 HEADERS = {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}
 
 
+def reply(code, body):
+    return {'statusCode': code, 'headers': HEADERS, 'body': json.dumps(body, ensure_ascii=False)}
+
+
+def add_to_waitlist(schema, data, name, phone):
+    try:
+        event_id = int(data.get('event_id') or 0)
+    except (TypeError, ValueError):
+        event_id = 0
+    if not event_id:
+        return reply(400, {'error': 'Invalid data'})
+
+    conn = psycopg2.connect(os.environ['DATABASE_URL'])
+    conn.autocommit = True
+    cur = conn.cursor()
+    cur.execute(
+        f'SELECT event_date, time_start, place, title, capacity FROM {schema}.events WHERE id = {event_id}'
+    )
+    row = cur.fetchone()
+    if not row:
+        cur.close()
+        conn.close()
+        return reply(404, {'error': 'not_found'})
+
+    capacity = row[4]
+    cur.execute(
+        f"SELECT COUNT(*) FROM {schema}.bookings WHERE event_id = {event_id} AND status <> 'cancelled'"
+    )
+    taken = cur.fetchone()[0]
+    if not capacity or taken < capacity:
+        cur.close()
+        conn.close()
+        return reply(409, {'error': 'not_full'})
+
+    digits = ''.join(ch for ch in phone if ch.isdigit())
+    cur.execute(f'SELECT phone FROM {schema}.waitlist WHERE event_id = {event_id}')
+    for (existing,) in cur.fetchall():
+        if ''.join(ch for ch in existing if ch.isdigit()) == digits:
+            cur.close()
+            conn.close()
+            return reply(200, {'ok': True, 'duplicate': True})
+
+    cur.execute(
+        f'INSERT INTO {schema}.waitlist (event_id, name, phone) VALUES (%s, %s, %s)',
+        (event_id, name, phone),
+    )
+    cur.execute(f'SELECT COUNT(*) FROM {schema}.waitlist WHERE event_id = {event_id}')
+    position = cur.fetchone()[0]
+    cur.close()
+    conn.close()
+
+    label = f"{row[0].strftime('%d.%m.%Y')} {row[1].strftime('%H:%M')} · " + ', '.join(p for p in [row[3], row[2]] if p)
+    try:
+        token = os.environ['TELEGRAM_BOT_TOKEN']
+        text = f'Лист ожидания\n\nИмя: {name}\nТелефон: {phone}\nЗанятие: {label}\nВ листе ожидания: {position}'
+        payload = json.dumps({'chat_id': os.environ['TELEGRAM_CHAT_ID'], 'text': text}).encode()
+        req = urllib.request.Request(
+            f'https://api.telegram.org/bot{token}/sendMessage',
+            data=payload,
+            headers={'Content-Type': 'application/json'},
+        )
+        urllib.request.urlopen(req, timeout=4)
+    except Exception as e:
+        print(f'waitlist telegram failed: {e}')
+
+    return reply(200, {'ok': True, 'position': position})
+
+
 def handler(event: dict, context) -> dict:
     """Принимает заявку с формы записи и отправляет её в Telegram владельцу."""
     if event.get('httpMethod') == 'OPTIONS':
@@ -44,6 +112,9 @@ def handler(event: dict, context) -> dict:
 
     results = {}
     schema = os.environ['MAIN_DB_SCHEMA']
+
+    if data.get('waitlist'):
+        return add_to_waitlist(schema, data, name, phone)
 
     event_id = None
     event_label = ''
