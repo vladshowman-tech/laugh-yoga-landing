@@ -18,6 +18,7 @@ const Booking = ({ data, events = [] }: { data: any; events?: any[] }) => {
   const { toast } = useToast();
   const [sending, setSending] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
 
   useEffect(() => {
     const onPick = (e: Event) => {
@@ -27,7 +28,6 @@ const Booking = ({ data, events = [] }: { data: any; events?: any[] }) => {
     window.addEventListener('select-event', onPick);
     return () => window.removeEventListener('select-event', onPick);
   }, []);
-  const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
 
   const validate = () => {
     const e: { name?: string; phone?: string } = {};
