@@ -157,8 +157,8 @@ def handler(event: dict, context) -> dict:
             return resp(200, {'ok': True})
 
         if action == 'list_bookings':
-            cur.execute(f'SELECT id, name, phone, slot, status, created_at, event_label FROM {schema}.bookings ORDER BY created_at DESC LIMIT 500')
-            cols = ['id', 'name', 'phone', 'slot', 'status', 'created_at', 'event_label']
+            cur.execute(f'SELECT id, name, phone, slot, status, created_at, event_label, event_id FROM {schema}.bookings ORDER BY created_at DESC LIMIT 500')
+            cols = ['id', 'name', 'phone', 'slot', 'status', 'created_at', 'event_label', 'event_id']
             return resp(200, {'items': [dict(zip(cols, r)) for r in cur.fetchall()]})
 
         if action == 'set_booking_status':
