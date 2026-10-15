@@ -44,6 +44,7 @@ const EventCard = ({
   onDelete,
   onCopy,
   onRemoveWaiting,
+  onPromote,
 }: {
   e: EventItem;
   waiting: WaitItem[];
@@ -51,6 +52,7 @@ const EventCard = ({
   onDelete: () => void;
   onCopy: () => void;
   onRemoveWaiting: (id: number) => void;
+  onPromote: (id: number) => void;
 }) => {
   const [open, setOpen] = useState(false);
   return (
@@ -116,9 +118,15 @@ const EventCard = ({
                   </a>
                   <div className="text-xs text-slate-500">{fmtDateTime(w.created_at)}</div>
                 </div>
-                <Button variant="ghost" size="icon" title="Убрать из списка" onClick={() => onRemoveWaiting(w.id)}>
-                  <Icon name="X" size={16} />
-                </Button>
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button size="sm" onClick={() => onPromote(w.id)}>
+                    <Icon name="UserCheck" size={16} className="mr-1.5" />
+                    Записать
+                  </Button>
+                  <Button variant="ghost" size="icon" title="Убрать из списка" onClick={() => onRemoveWaiting(w.id)}>
+                    <Icon name="X" size={16} />
+                  </Button>
+                </div>
               </li>
             ))}
           </ol>
@@ -181,6 +189,17 @@ const ScheduleTab = () => {
     if (!window.confirm('Убрать человека из листа ожидания?')) return;
     await adminCall('delete_waitlist', { id });
     setWaitlist((prev) => prev.filter((w) => w.id !== id));
+  };
+
+  const promote = async (id: number) => {
+    try {
+      await adminCall('promote_waitlist', { id });
+      toast({ title: 'Записан', description: 'Заявка появилась во вкладке «Заявки» со статусом «Записан».' });
+      await load();
+      refreshSite();
+    } catch (e) {
+      toast({ title: 'Не удалось записать', description: (e as Error).message, variant: 'destructive' });
+    }
   };
 
   if (!items) return <p className="py-10 text-center text-slate-500">Загружаю...</p>;
@@ -274,6 +293,7 @@ const ScheduleTab = () => {
                 e={e}
                 waiting={waitlist.filter((w) => w.event_id === e.id)}
                 onRemoveWaiting={removeWaiting}
+                onPromote={promote}
                 onEdit={() => setForm({ ...e })}
                 onDelete={() => remove(e.id)}
                 onCopy={() => setForm({ ...e, id: 0, date: '' })}
@@ -305,6 +325,7 @@ const ScheduleTab = () => {
                 e={e}
                 waiting={waitlist.filter((w) => w.event_id === e.id)}
                 onRemoveWaiting={removeWaiting}
+                onPromote={promote}
                 onEdit={() => setForm({ ...e })}
                 onDelete={() => remove(e.id)}
                 onCopy={() => {

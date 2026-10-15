@@ -173,6 +173,37 @@ def handler(event: dict, context) -> dict:
             cols = ['id', 'event_id', 'name', 'phone', 'created_at']
             return resp(200, {'items': [dict(zip(cols, r)) for r in cur.fetchall()]})
 
+        if action == 'promote_waitlist':
+            wid = int(body.get('id', 0))
+            cur.execute(f'SELECT event_id, name, phone FROM {schema}.waitlist WHERE id = %s', (wid,))
+            w = cur.fetchone()
+            if not w:
+                return resp(404, {'error': 'Человека уже нет в листе ожидания'})
+            cur.execute(
+                f'SELECT event_date, time_start, place, title, address, capacity FROM {schema}.events WHERE id = %s',
+                (w[0],),
+            )
+            ev = cur.fetchone()
+            if not ev:
+                return resp(404, {'error': 'Занятие не найдено'})
+            if ev[5]:
+                cur.execute(
+                    f"SELECT COUNT(*) FROM {schema}.bookings WHERE event_id = %s AND status <> 'cancelled'",
+                    (w[0],),
+                )
+                if cur.fetchone()[0] >= ev[5]:
+                    return resp(409, {'error': 'На занятии нет свободных мест. Увеличьте лимит или освободите место.'})
+            label = f"{ev[0].strftime('%d.%m.%Y')} {ev[1].strftime('%H:%M')} · " + ', '.join(
+                p for p in [ev[3], ev[2], ev[4]] if p
+            )
+            cur.execute(
+                f"INSERT INTO {schema}.bookings (name, phone, slot, status, event_id, event_label) "
+                f"VALUES (%s, %s, %s, 'done', %s, %s)",
+                (w[1], w[2], label, w[0], label),
+            )
+            cur.execute(f'DELETE FROM {schema}.waitlist WHERE id = %s', (wid,))
+            return resp(200, {'ok': True})
+
         if action == 'delete_waitlist':
             cur.execute(f'DELETE FROM {schema}.waitlist WHERE id = %s', (int(body.get('id', 0)),))
             return resp(200, {'ok': True})
