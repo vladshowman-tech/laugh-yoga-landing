@@ -51,7 +51,7 @@ const Header = ({ showSchedule = true }: { showSchedule?: boolean }) => {
             </a>
           ))}
           <a
-            href="#book"
+            href="#schedule"
             className="rounded-full bg-hero-accent px-5 py-2 font-head text-sm font-extrabold text-hero-contrast transition-transform hover:-translate-y-0.5 hover:rotate-1"
           >
             Записаться
@@ -81,7 +81,7 @@ const Header = ({ showSchedule = true }: { showSchedule?: boolean }) => {
               </a>
             ))}
             <a
-              href="#book"
+              href="#schedule"
               onClick={() => setOpen(false)}
               className="mt-4 rounded-full bg-[var(--hero-x-ho)] py-3 text-center font-head font-extrabold text-hero-accent"
             >

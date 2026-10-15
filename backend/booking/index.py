@@ -6,87 +6,64 @@ import urllib.request
 import psycopg2
 from datetime import datetime, timedelta, timezone
 
-SLOTS = {
-    'weekday-morning': 'Будни, утро',
-    'weekday-evening': 'Будни, вечер',
-    'weekend': 'Выходные',
-    'other': 'Другое время — связаться с клиентом',
-    '': 'Любое время',
-}
-
 HEADERS = {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}
+
+TAB_WAIT = 'Лист ожидания'
 
 
 def reply(code, body):
     return {'statusCode': code, 'headers': HEADERS, 'body': json.dumps(body, ensure_ascii=False)}
 
 
-def add_to_waitlist(schema, data, name, phone):
-    try:
-        event_id = int(data.get('event_id') or 0)
-    except (TypeError, ValueError):
-        event_id = 0
-    if not event_id:
-        return reply(400, {'error': 'Invalid data'})
+def digits_of(value):
+    return ''.join(ch for ch in str(value) if ch.isdigit())
 
-    conn = psycopg2.connect(os.environ['DATABASE_URL'])
-    conn.autocommit = True
-    cur = conn.cursor()
-    cur.execute(
-        f'SELECT event_date, time_start, place, title, capacity FROM {schema}.events WHERE id = {event_id}'
+
+def push_sheet(tab, key, event_label, name, phone, email, status):
+    url = os.environ.get('GOOGLE_SHEETS_WEBHOOK_URL')
+    if not url:
+        raise RuntimeError('GOOGLE_SHEETS_WEBHOOK_URL is not set')
+    payload = json.dumps({
+        'tab': tab,
+        'id': key,
+        'date': datetime.now(timezone(timedelta(hours=5))).strftime('%d.%m.%Y %H:%M'),
+        'name': name,
+        'phone': phone,
+        'email': email,
+        'event': event_label,
+        'status': status,
+    }, ensure_ascii=False).encode()
+    req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'})
+    urllib.request.urlopen(req, timeout=4)
+
+
+def push_telegram(text):
+    token = os.environ['TELEGRAM_BOT_TOKEN']
+    payload = json.dumps({'chat_id': os.environ['TELEGRAM_CHAT_ID'], 'text': text}).encode()
+    req = urllib.request.Request(
+        f'https://api.telegram.org/bot{token}/sendMessage',
+        data=payload,
+        headers={'Content-Type': 'application/json'},
     )
-    row = cur.fetchone()
-    if not row:
-        cur.close()
-        conn.close()
-        return reply(404, {'error': 'not_found'})
+    urllib.request.urlopen(req, timeout=4)
 
-    capacity = row[4]
-    cur.execute(
-        f"SELECT COUNT(*) FROM {schema}.bookings WHERE event_id = {event_id} AND status <> 'cancelled'"
-    )
-    taken = cur.fetchone()[0]
-    if not capacity or taken < capacity:
-        cur.close()
-        conn.close()
-        return reply(409, {'error': 'not_full'})
 
-    digits = ''.join(ch for ch in phone if ch.isdigit())
-    cur.execute(f'SELECT phone FROM {schema}.waitlist WHERE event_id = {event_id}')
-    for (existing,) in cur.fetchall():
-        if ''.join(ch for ch in existing if ch.isdigit()) == digits:
-            cur.close()
-            conn.close()
-            return reply(200, {'ok': True, 'duplicate': True})
+def notify(jobs):
+    def run(fn):
+        try:
+            fn()
+        except Exception as e:
+            print(f'notify failed: {e}')
 
-    cur.execute(
-        f'INSERT INTO {schema}.waitlist (event_id, name, phone) VALUES (%s, %s, %s)',
-        (event_id, name, phone),
-    )
-    cur.execute(f'SELECT COUNT(*) FROM {schema}.waitlist WHERE event_id = {event_id}')
-    position = cur.fetchone()[0]
-    cur.close()
-    conn.close()
-
-    label = f"{row[0].strftime('%d.%m.%Y')} {row[1].strftime('%H:%M')} · " + ', '.join(p for p in [row[3], row[2]] if p)
-    try:
-        token = os.environ['TELEGRAM_BOT_TOKEN']
-        text = f'Лист ожидания\n\nИмя: {name}\nТелефон: {phone}\nЗанятие: {label}\nВ листе ожидания: {position}'
-        payload = json.dumps({'chat_id': os.environ['TELEGRAM_CHAT_ID'], 'text': text}).encode()
-        req = urllib.request.Request(
-            f'https://api.telegram.org/bot{token}/sendMessage',
-            data=payload,
-            headers={'Content-Type': 'application/json'},
-        )
-        urllib.request.urlopen(req, timeout=4)
-    except Exception as e:
-        print(f'waitlist telegram failed: {e}')
-
-    return reply(200, {'ok': True, 'position': position})
+    threads = [threading.Thread(target=run, args=(fn,)) for fn in jobs]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
 
 
 def handler(event: dict, context) -> dict:
-    """Принимает заявку с формы записи и отправляет её в Telegram владельцу."""
+    """Принимает запись на занятие (перед оплатой) или заявку в лист ожидания, сохраняет в базу, Telegram и Google-таблицу."""
     if event.get('httpMethod') == 'OPTIONS':
         return {
             'statusCode': 200,
@@ -100,114 +77,112 @@ def handler(event: dict, context) -> dict:
         }
 
     if event.get('httpMethod') != 'POST':
-        return {'statusCode': 405, 'headers': HEADERS, 'body': json.dumps({'error': 'Method not allowed'})}
+        return reply(405, {'error': 'Method not allowed'})
 
     data = json.loads(event.get('body') or '{}')
     name = str(data.get('name', '')).strip()[:100]
     phone = str(data.get('phone', '')).strip()[:30]
-    slot = SLOTS.get(str(data.get('slot', '')), 'Любое время')
+    email = str(data.get('email', '')).strip()[:200]
 
-    if len(name) < 2 or len(phone) < 10:
-        return {'statusCode': 400, 'headers': HEADERS, 'body': json.dumps({'error': 'Invalid data'})}
+    if len(name) < 2 or len(digits_of(phone)) < 10:
+        return reply(400, {'error': 'Invalid data'})
+    if email and ('@' not in email or '.' not in email.split('@')[-1]):
+        return reply(400, {'error': 'Invalid email'})
 
-    results = {}
+    try:
+        event_id = int(data.get('event_id') or 0)
+    except (TypeError, ValueError):
+        event_id = 0
+    if not event_id:
+        return reply(400, {'error': 'Invalid data'})
+
     schema = os.environ['MAIN_DB_SCHEMA']
+    conn = psycopg2.connect(os.environ['DATABASE_URL'])
+    conn.autocommit = True
+    cur = conn.cursor()
+
+    cur.execute(
+        f'SELECT event_date, time_start, place, title, address, capacity FROM {schema}.events WHERE id = {event_id}'
+    )
+    row = cur.fetchone()
+    if not row:
+        cur.close()
+        conn.close()
+        return reply(404, {'error': 'not_found'})
+
+    label = f"{row[0].strftime('%d.%m.%Y')} {row[1].strftime('%H:%M')} · " + ', '.join(
+        p for p in [row[3], row[2], row[4]] if p
+    )
+    capacity = row[5]
+
+    cur.execute(
+        f"SELECT COUNT(*) FROM {schema}.bookings WHERE event_id = {event_id} AND status <> 'cancelled'"
+    )
+    taken = cur.fetchone()[0]
+    is_full = bool(capacity) and taken >= capacity
 
     if data.get('waitlist'):
-        return add_to_waitlist(schema, data, name, phone)
+        if not is_full:
+            cur.close()
+            conn.close()
+            return reply(409, {'error': 'not_full'})
 
-    event_id = None
-    event_label = ''
-    try:
-        raw_event_id = int(data.get('event_id') or 0)
-    except (TypeError, ValueError):
-        raw_event_id = 0
-    if raw_event_id:
-        conn = psycopg2.connect(os.environ['DATABASE_URL'])
-        cur = conn.cursor()
-        cur.execute(
-            f'SELECT event_date, time_start, place, title, address, capacity FROM {schema}.events WHERE id = {raw_event_id}'
-        )
-        row = cur.fetchone()
-        if row and row[5]:
-            cur.execute(
-                f"SELECT COUNT(*) FROM {schema}.bookings WHERE event_id = {raw_event_id} AND status <> 'cancelled'"
-            )
-            taken = cur.fetchone()[0]
-            if taken >= row[5]:
+        cur.execute(f'SELECT id, phone FROM {schema}.waitlist WHERE event_id = {event_id}')
+        for _, existing in cur.fetchall():
+            if digits_of(existing) == digits_of(phone):
                 cur.close()
                 conn.close()
-                return {
-                    'statusCode': 409,
-                    'headers': HEADERS,
-                    'body': json.dumps({'error': 'sold_out'}),
-                }
-        cur.close()
-        conn.close()
-        if row:
-            event_id = raw_event_id
-            parts = [row[3], row[2], row[4]]
-            event_label = f"{row[0].strftime('%d.%m.%Y')} {row[1].strftime('%H:%M')} · " + ', '.join(p for p in parts if p)
+                return reply(200, {'ok': True, 'duplicate': True})
 
-    if event_label:
-        slot = event_label
-
-    def save_db():
-        conn = psycopg2.connect(os.environ['DATABASE_URL'])
-        conn.autocommit = True
-        cur = conn.cursor()
         cur.execute(
-            f'INSERT INTO {schema}.bookings (name, phone, slot, event_id, event_label) VALUES (%s, %s, %s, %s, %s)',
-            (name, phone, slot, event_id, event_label),
+            f'INSERT INTO {schema}.waitlist (event_id, name, phone, email) VALUES (%s, %s, %s, %s) RETURNING id',
+            (event_id, name, phone, email),
         )
+        wid = cur.fetchone()[0]
+        cur.execute(f'SELECT COUNT(*) FROM {schema}.waitlist WHERE event_id = {event_id}')
+        position = cur.fetchone()[0]
         cur.close()
         conn.close()
 
-    def send_telegram():
-        when = f'Занятие: {event_label}' if event_label else f'Удобное время: {slot}'
-        text = f'Новая заявка на занятие\n\nИмя: {name}\nТелефон: {phone}\n{when}'
-        token = os.environ['TELEGRAM_BOT_TOKEN']
-        payload = json.dumps({'chat_id': os.environ['TELEGRAM_CHAT_ID'], 'text': text}).encode()
-        req = urllib.request.Request(
-            f'https://api.telegram.org/bot{token}/sendMessage',
-            data=payload,
-            headers={'Content-Type': 'application/json'},
+        text = (
+            f'Лист ожидания\n\nИмя: {name}\nТелефон: {phone}\nE-mail: {email or "—"}\n'
+            f'Занятие: {label}\nВ листе ожидания: {position}'
         )
-        urllib.request.urlopen(req, timeout=4)
+        notify([
+            lambda: push_sheet(TAB_WAIT, f'w{wid}', label, name, phone, email, 'В листе ожидания'),
+            lambda: push_telegram(text),
+        ])
+        return reply(200, {'ok': True, 'position': position})
 
-    def send_sheet():
-        payload = json.dumps({
-            'date': datetime.now(timezone(timedelta(hours=5))).strftime('%d.%m.%Y %H:%M'),
-            'name': name,
-            'phone': phone,
-            'slot': slot,
-        }).encode()
-        req = urllib.request.Request(
-            os.environ['GOOGLE_SHEETS_WEBHOOK_URL'],
-            data=payload,
-            headers={'Content-Type': 'application/json'},
-        )
-        urllib.request.urlopen(req, timeout=4)
+    if is_full:
+        cur.close()
+        conn.close()
+        return reply(409, {'error': 'sold_out'})
 
-    def run(key, fn):
-        try:
-            fn()
-            results[key] = True
-        except Exception as e:
-            print(f'{key} failed: {e}')
-            results[key] = False
+    cur.execute(
+        f"SELECT phone FROM {schema}.bookings WHERE event_id = {event_id} AND status <> 'cancelled'"
+    )
+    for (existing,) in cur.fetchall():
+        if digits_of(existing) == digits_of(phone):
+            cur.close()
+            conn.close()
+            return reply(200, {'ok': True, 'duplicate': True})
 
-    threads = [
-        threading.Thread(target=run, args=('db', save_db)),
-        threading.Thread(target=run, args=('telegram', send_telegram)),
-        threading.Thread(target=run, args=('sheet', send_sheet)),
-    ]
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
+    cur.execute(
+        f"INSERT INTO {schema}.bookings (name, phone, email, slot, event_id, event_label) "
+        f"SELECT %s, %s, %s, '', %s, %s "
+        f"WHERE (SELECT capacity FROM {schema}.events WHERE id = {event_id}) IS NULL "
+        f"OR (SELECT COUNT(*) FROM {schema}.bookings WHERE event_id = {event_id} AND status <> 'cancelled') "
+        f"< (SELECT capacity FROM {schema}.events WHERE id = {event_id}) "
+        f"RETURNING id",
+        (name, phone, email, event_id, label),
+    )
+    created = cur.fetchone()
+    cur.close()
+    conn.close()
+    if not created:
+        return reply(409, {'error': 'sold_out'})
 
-    if not any(results.values()):
-        return {'statusCode': 502, 'headers': HEADERS, 'body': json.dumps({'error': 'Send failed'})}
-
-    return {'statusCode': 200, 'headers': HEADERS, 'body': json.dumps({'ok': True, **results})}
+    text = f'Новая запись, ждём оплату\n\nИмя: {name}\nТелефон: {phone}\nE-mail: {email or "—"}\nЗанятие: {label}'
+    notify([lambda: push_telegram(text)])
+    return reply(200, {'ok': True})

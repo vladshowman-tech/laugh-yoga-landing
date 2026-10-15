@@ -38,7 +38,7 @@ const Coach = ({ data }: { data: any }) => {
             </ul>
 
             <a
-              href="#book"
+              href="#schedule"
               className="mt-8 inline-flex items-center gap-3 rounded-full bg-hero-accent px-7 py-3.5 font-head font-extrabold text-hero-contrast transition-transform hover:-translate-y-1 hover:rotate-1"
             >
               {data.button} <span aria-hidden>→</span>

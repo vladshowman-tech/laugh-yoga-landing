@@ -47,7 +47,7 @@ const Hero = ({ data }: { data: any }) => {
           </p>
 
           <a
-            href="#book"
+            href="#schedule"
             className="animate-fade-in mt-2 inline-flex items-center gap-3 rounded-full bg-hero-accent px-8 py-4 font-head text-lg font-extrabold text-hero-contrast transition-all duration-200 hover:-translate-y-1 hover:rotate-2 hover:shadow-xl hover:shadow-black/30"
             style={{ animationDelay: '0.2s' }}
           >
