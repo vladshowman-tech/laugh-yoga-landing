@@ -1,13 +1,32 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Icon from '@/components/ui/icon';
 import { useToast } from '@/hooks/use-toast';
 import { BOOKING_URL } from '@/lib/api';
 
-const Booking = ({ data }: { data: any }) => {
+const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+
+const eventLabel = (ev: any) => {
+  const [, m, d] = ev.date.split('-').map(Number);
+  const name = [ev.title, ev.place].filter(Boolean).join(', ');
+  return `${d} ${MONTHS[m - 1]}, ${ev.time_start} — ${name}`;
+};
+
+const EMPTY_FORM = { name: '', phone: '', slot: '', event_id: 0 };
+
+const Booking = ({ data, events = [] }: { data: any; events?: any[] }) => {
   const CONTACTS: { icon: string; label: string; sub: string }[] = data.items || [];
   const { toast } = useToast();
   const [sending, setSending] = useState(false);
-  const [form, setForm] = useState({ name: '', phone: '', slot: '' });
+  const [form, setForm] = useState(EMPTY_FORM);
+
+  useEffect(() => {
+    const onPick = (e: Event) => {
+      const id = Number((e as CustomEvent).detail);
+      if (id) setForm((f) => ({ ...f, event_id: id, slot: '' }));
+    };
+    window.addEventListener('select-event', onPick);
+    return () => window.removeEventListener('select-event', onPick);
+  }, []);
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
 
   const validate = () => {
@@ -34,7 +53,7 @@ const Booking = ({ data }: { data: any }) => {
         title: 'Заявка принята!',
         description: `${form.name}, мы перезвоним и подтвердим место в группе.`,
       });
-      setForm({ name: '', phone: '', slot: '' });
+      setForm(EMPTY_FORM);
       setErrors({});
     } catch {
       toast({
@@ -117,17 +136,35 @@ const Booking = ({ data }: { data: any }) => {
 
             <div className="mb-6">
               <label className="mb-2 block text-sm font-semibold uppercase tracking-wide text-hero-muted">
-                Когда удобно
+                {events.length > 0 ? 'Занятие' : 'Когда удобно'}
               </label>
               <select
-                value={form.slot}
-                onChange={(e) => setForm({ ...form, slot: e.target.value })}
+                value={form.event_id ? `event:${form.event_id}` : form.slot}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v.startsWith('event:')) setForm({ ...form, event_id: Number(v.slice(6)), slot: '' });
+                  else setForm({ ...form, event_id: 0, slot: v });
+                }}
                 className="w-full rounded-xl border-2 border-hero-line bg-hero-accent px-4 py-3 font-body text-hero-text focus:border-[var(--hero-x-ho)] focus:outline-none"
               >
-                <option value="">Любое время</option>
-                <option value="weekday-morning">Будни, утро</option>
-                <option value="weekday-evening">Будни, вечер</option>
-                <option value="weekend">Выходные</option>
+                {events.length > 0 ? (
+                  <>
+                    <option value="">Пока не выбрал(а)</option>
+                    {events.map((ev) => (
+                      <option key={ev.id} value={`event:${ev.id}`}>
+                        {eventLabel(ev)}
+                      </option>
+                    ))}
+                    <option value="other">Другое время — свяжитесь со мной</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="">Любое время</option>
+                    <option value="weekday-morning">Будни, утро</option>
+                    <option value="weekday-evening">Будни, вечер</option>
+                    <option value="weekend">Выходные</option>
+                  </>
+                )}
               </select>
             </div>
 

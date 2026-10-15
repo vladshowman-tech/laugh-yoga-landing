@@ -64,6 +64,7 @@ const Schedule = ({ data }: { data: any }) => {
 
                 <a
                   href="#book"
+                  onClick={() => window.dispatchEvent(new CustomEvent('select-event', { detail: e.id }))}
                   className="mt-6 inline-flex items-center justify-center rounded-full bg-[var(--hero-x-ho)] px-6 py-3 font-head font-extrabold text-hero-accent transition-transform hover:-translate-y-0.5"
                 >
                   Записаться

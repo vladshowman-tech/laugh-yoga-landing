@@ -10,6 +10,7 @@ SLOTS = {
     'weekday-morning': 'Будни, утро',
     'weekday-evening': 'Будни, вечер',
     'weekend': 'Выходные',
+    'other': 'Другое время — связаться с клиентом',
     '': 'Любое время',
 }
 
@@ -42,20 +43,45 @@ def handler(event: dict, context) -> dict:
         return {'statusCode': 400, 'headers': HEADERS, 'body': json.dumps({'error': 'Invalid data'})}
 
     results = {}
+    schema = os.environ['MAIN_DB_SCHEMA']
+
+    event_id = None
+    event_label = ''
+    try:
+        raw_event_id = int(data.get('event_id') or 0)
+    except (TypeError, ValueError):
+        raw_event_id = 0
+    if raw_event_id:
+        conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        cur = conn.cursor()
+        cur.execute(
+            f'SELECT event_date, time_start, place, title, address FROM {schema}.events WHERE id = {raw_event_id}'
+        )
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        if row:
+            event_id = raw_event_id
+            parts = [row[3], row[2], row[4]]
+            event_label = f"{row[0].strftime('%d.%m.%Y')} {row[1].strftime('%H:%M')} · " + ', '.join(p for p in parts if p)
+
+    if event_label:
+        slot = event_label
 
     def save_db():
         conn = psycopg2.connect(os.environ['DATABASE_URL'])
         conn.autocommit = True
         cur = conn.cursor()
         cur.execute(
-            f"INSERT INTO {os.environ['MAIN_DB_SCHEMA']}.bookings (name, phone, slot) VALUES (%s, %s, %s)",
-            (name, phone, slot),
+            f'INSERT INTO {schema}.bookings (name, phone, slot, event_id, event_label) VALUES (%s, %s, %s, %s, %s)',
+            (name, phone, slot, event_id, event_label),
         )
         cur.close()
         conn.close()
 
     def send_telegram():
-        text = f'Новая заявка на занятие\n\nИмя: {name}\nТелефон: {phone}\nУдобное время: {slot}'
+        when = f'Занятие: {event_label}' if event_label else f'Удобное время: {slot}'
+        text = f'Новая заявка на занятие\n\nИмя: {name}\nТелефон: {phone}\n{when}'
         token = os.environ['TELEGRAM_BOT_TOKEN']
         payload = json.dumps({'chat_id': os.environ['TELEGRAM_CHAT_ID'], 'text': text}).encode()
         req = urllib.request.Request(

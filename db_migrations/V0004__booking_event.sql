@@ -1,0 +1,2 @@
+ALTER TABLE t_p76941956_laugh_yoga_landing.bookings ADD COLUMN IF NOT EXISTS event_id INTEGER;
+ALTER TABLE t_p76941956_laugh_yoga_landing.bookings ADD COLUMN IF NOT EXISTS event_label VARCHAR(400) NOT NULL DEFAULT '';

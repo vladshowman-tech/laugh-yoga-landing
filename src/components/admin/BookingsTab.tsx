@@ -11,6 +11,7 @@ interface Booking {
   slot: string;
   status: string;
   created_at: string;
+  event_label: string;
 }
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -73,8 +74,12 @@ const BookingsTab = () => {
                 <a href={`tel:${b.phone}`} className="text-sm font-semibold text-blue-700">
                   {b.phone}
                 </a>
+                {b.event_label && (
+                  <div className="mt-1 text-sm font-semibold text-slate-800">Занятие: {b.event_label}</div>
+                )}
                 <div className="mt-1 text-xs text-slate-500">
-                  {b.slot || 'Любое время'} · {fmt(b.created_at)}
+                  {!b.event_label && `${b.slot || 'Любое время'} · `}
+                  {fmt(b.created_at)}
                 </div>
               </div>
               <div className="flex items-center gap-2">

@@ -44,7 +44,7 @@ const Index = () => {
         <Reviews data={data.reviews || {}} />
         <Pricing data={data.pricing || {}} />
         <Faq data={data.faq || {}} />
-        <Booking data={data.contacts || {}} />
+        <Booking data={data.contacts || {}} events={data.schedule?.enabled !== false ? data.schedule?.events || [] : []} />
       </main>
       <Footer data={data.footer || {}} />
     </div>
