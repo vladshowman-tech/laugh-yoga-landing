@@ -47,6 +47,7 @@ const BookingsTab = () => {
   const [items, setItems] = useState<Booking[] | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [filter, setFilter] = useState<string>(ALL);
+  const [exporting, setExporting] = useState(false);
 
   const load = () =>
     Promise.all([
@@ -99,6 +100,55 @@ const BookingsTab = () => {
     return String(b.event_id) === filter;
   });
 
+  const current = events.find((e) => String(e.id) === filter);
+
+  const exportExcel = async () => {
+    const rows = filtered.filter((b) => b.status !== 'cancelled');
+    if (rows.length === 0) {
+      toast({ title: 'Нет записавшихся для выгрузки' });
+      return;
+    }
+    setExporting(true);
+    try {
+      const { default: writeExcelFile } = await import('write-excel-file/browser');
+      const head = ['№', 'Имя', 'Телефон', 'Занятие', 'Статус', 'Дата заявки'].map((value) => ({
+        value,
+        fontWeight: 'bold' as const,
+        backgroundColor: '#E5E7EB',
+      }));
+      const body = rows.map((b, i) => [
+        { type: Number, value: i + 1 },
+        { type: String, value: b.name },
+        { type: String, value: b.phone },
+        { type: String, value: b.event_label || b.slot || 'Любое время' },
+        { type: String, value: STATUS[b.status]?.label || b.status },
+        { type: String, value: fmt(b.created_at) },
+      ]);
+      const blob = await writeExcelFile([head, ...body], {
+        columns: [{ width: 5 }, { width: 24 }, { width: 18 }, { width: 55 }, { width: 12 }, { width: 18 }],
+        sheet: 'Записавшиеся',
+      }).toBlob();
+
+      const label = current
+        ? `${current.date}_${current.time_start.replace(':', '-')}`
+        : filter === NO_EVENT
+          ? 'bez-zanyatiya'
+          : 'vse-zayavki';
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `zapisavshiesya_${label}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast({ title: 'Не удалось создать файл', description: (e as Error).message, variant: 'destructive' });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const activeCount = items.filter((b) => b.status !== 'cancelled').length;
   const noEventCount = counts[NO_EVENT] || 0;
 
@@ -119,16 +169,20 @@ const BookingsTab = () => {
     </button>
   );
 
-  const current = events.find((e) => String(e.id) === filter);
-
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 md:p-7">
       <div className="mb-5 flex items-center justify-between">
         <h2 className="text-xl font-bold text-slate-900">Заявки ({filtered.length})</h2>
-        <Button variant="outline" size="sm" onClick={load}>
-          <Icon name="RefreshCw" size={16} className="mr-2" />
-          Обновить
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" onClick={exportExcel} disabled={exporting}>
+            <Icon name="FileSpreadsheet" size={16} className="mr-2" />
+            {exporting ? 'Готовлю...' : 'Скачать в Excel'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={load}>
+            <Icon name="RefreshCw" size={16} className="mr-2" />
+            Обновить
+          </Button>
+        </div>
       </div>
 
       <div className="mb-2 flex gap-2 overflow-x-auto pb-2">
