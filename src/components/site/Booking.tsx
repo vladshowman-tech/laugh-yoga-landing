@@ -8,8 +8,11 @@ const CONTACTS = [
   { icon: 'Send', label: '@hohohaha_ekb', sub: 'Пишите в Telegram' },
 ];
 
+const BOOKING_URL = 'https://functions.poehali.dev/2faff983-eeea-49c6-8dc8-98181cb2ffd7';
+
 const Booking = () => {
   const { toast } = useToast();
+  const [sending, setSending] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', slot: '' });
   const [errors, setErrors] = useState<{ name?: string; phone?: string }>({});
 
@@ -22,15 +25,32 @@ const Booking = () => {
     return Object.keys(e).length === 0;
   };
 
-  const submit = (ev: React.FormEvent) => {
+  const submit = async (ev: React.FormEvent) => {
     ev.preventDefault();
-    if (!validate()) return;
-    toast({
-      title: 'Заявка принята!',
-      description: `${form.name}, мы перезвоним и подтвердим место в группе.`,
-    });
-    setForm({ name: '', phone: '', slot: '' });
-    setErrors({});
+    if (!validate() || sending) return;
+    setSending(true);
+    try {
+      const res = await fetch(BOOKING_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error('send failed');
+      toast({
+        title: 'Заявка принята!',
+        description: `${form.name}, мы перезвоним и подтвердим место в группе.`,
+      });
+      setForm({ name: '', phone: '', slot: '' });
+      setErrors({});
+    } catch {
+      toast({
+        title: 'Не удалось отправить заявку',
+        description: 'Попробуйте ещё раз или позвоните нам.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -120,9 +140,10 @@ const Booking = () => {
 
             <button
               type="submit"
-              className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-[var(--hero-x-ho)] px-8 py-4 font-head text-lg font-extrabold text-hero-accent transition-transform hover:-translate-y-1 hover:rotate-1"
+              disabled={sending}
+              className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-[var(--hero-x-ho)] px-8 py-4 font-head text-lg font-extrabold text-hero-accent transition-transform hover:-translate-y-1 hover:rotate-1 disabled:opacity-60"
             >
-              Записаться на занятие <span aria-hidden>→</span>
+              {sending ? 'Отправляем...' : 'Записаться на занятие'} <span aria-hidden>→</span>
             </button>
             <p className="mt-3 text-center text-xs font-medium text-hero-muted">
               Нажимая кнопку, вы соглашаетесь на обработку данных

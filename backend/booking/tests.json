@@ -1,0 +1,1 @@
+{"tests": [{"name": "Invalid data rejected", "method": "POST", "path": "/", "body": {"name": "", "phone": ""}, "expectedStatus": 400}]}
