@@ -8,6 +8,7 @@ import Schedule from '@/components/site/Schedule';
 import Reviews from '@/components/site/Reviews';
 import Pricing from '@/components/site/Pricing';
 import Faq from '@/components/site/Faq';
+import Booking from '@/components/site/Booking';
 import Footer from '@/components/site/Footer';
 import { useSiteContent } from '@/hooks/useSiteContent';
 
@@ -43,8 +44,9 @@ const Index = () => {
         <Reviews data={data.reviews || {}} />
         <Pricing data={data.pricing || {}} />
         <Faq data={data.faq || {}} />
+        <Booking data={data.contacts || {}} events={data.schedule?.enabled !== false ? data.schedule?.events || [] : []} />
       </main>
-      <Footer data={data.footer || {}} contacts={data.contacts?.items || []} />
+      <Footer data={data.footer || {}} />
     </div>
   );
 };

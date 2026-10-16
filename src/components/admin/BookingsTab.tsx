@@ -8,7 +8,6 @@ interface Booking {
   id: number;
   name: string;
   phone: string;
-  email?: string;
   slot: string;
   status: string;
   created_at: string;
@@ -26,9 +25,9 @@ interface EventItem {
 }
 
 const STATUS: Record<string, { label: string; cls: string }> = {
-  new: { label: 'Ожидает оплаты', cls: 'bg-amber-100 text-amber-900' },
+  new: { label: 'Новая', cls: 'bg-amber-100 text-amber-900' },
   in_work: { label: 'В работе', cls: 'bg-blue-100 text-blue-900' },
-  done: { label: 'Оплачено', cls: 'bg-green-100 text-green-900' },
+  done: { label: 'Записан', cls: 'bg-green-100 text-green-900' },
   cancelled: { label: 'Отказ', cls: 'bg-slate-200 text-slate-700' },
 };
 
@@ -229,7 +228,6 @@ const BookingsTab = () => {
                 <a href={`tel:${b.phone}`} className="text-sm font-semibold text-blue-700">
                   {b.phone}
                 </a>
-                {b.email && <div className="text-sm text-slate-600">{b.email}</div>}
                 {b.event_label && (
                   <div className="mt-1 text-sm font-semibold text-slate-800">Занятие: {b.event_label}</div>
                 )}

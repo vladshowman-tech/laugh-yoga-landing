@@ -56,7 +56,7 @@ const Pricing = ({ data }: { data: any }) => {
               </ul>
 
               <a
-                href="#schedule"
+                href="#book"
                 className={`mt-8 inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 font-head font-extrabold transition-transform hover:-translate-y-0.5 ${
                   p.highlight
                     ? 'bg-[var(--hero-x-ho)] text-hero-accent'

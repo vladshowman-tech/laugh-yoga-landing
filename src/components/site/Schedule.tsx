@@ -1,6 +1,5 @@
 import Icon from '@/components/ui/icon';
-import { useState } from 'react';
-import BookingDialog from './BookingDialog';
+import WaitlistForm from './WaitlistForm';
 
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 const DAYS = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
@@ -20,8 +19,6 @@ const parseDate = (iso: string) => {
 
 const Schedule = ({ data }: { data: any }) => {
   const events: any[] = data.events || [];
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const selected = events.find((e) => e.id === selectedId) || null;
   if (data.enabled === false || events.length === 0) return null;
 
   return (
@@ -89,19 +86,22 @@ const Schedule = ({ data }: { data: any }) => {
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => setSelectedId(e.id)}
-                  className="mt-6 inline-flex items-center justify-center rounded-full bg-[var(--hero-x-ho)] px-6 py-3 font-head font-extrabold text-hero-accent transition-transform hover:-translate-y-0.5"
-                >
-                  Записаться
-                </button>
+                {e.left === 0 ? (
+                  <WaitlistForm eventId={e.id} />
+                ) : (
+                  <a
+                    href="#book"
+                    onClick={() => window.dispatchEvent(new CustomEvent('select-event', { detail: e.id }))}
+                    className="mt-6 inline-flex items-center justify-center rounded-full bg-[var(--hero-x-ho)] px-6 py-3 font-head font-extrabold text-hero-accent transition-transform hover:-translate-y-0.5"
+                  >
+                    Записаться
+                  </a>
+                )}
               </div>
             );
           })}
         </div>
       </div>
-      <BookingDialog event={selected} onClose={() => setSelectedId(null)} />
     </section>
   );
 };

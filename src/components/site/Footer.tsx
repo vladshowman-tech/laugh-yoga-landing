@@ -1,6 +1,6 @@
 import Icon from '@/components/ui/icon';
 
-const Footer = ({ data, contacts = [] }: { data: any; contacts?: { icon: string; label: string; sub: string }[] }) => {
+const Footer = ({ data }: { data: any }) => {
   return (
     <footer className="bg-hero-bg py-12">
       <div className="mx-auto max-w-6xl px-5 md:px-10">
@@ -22,19 +22,21 @@ const Footer = ({ data, contacts = [] }: { data: any; contacts?: { icon: string;
             </p>
           </div>
 
-          <ul id="contacts" className="flex flex-col gap-4">
-            {contacts.map((c, i) => (
-              <li key={i} className="flex items-center gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--hero-x-ho)] text-hero-accent">
-                  <Icon name={c.icon} fallback="Phone" size={20} />
-                </span>
-                <div>
-                  <div className="font-head text-sm font-extrabold text-hero-text">{c.label}</div>
-                  <div className="text-sm font-medium text-hero-muted">{c.sub}</div>
-                </div>
-              </li>
+          <div className="flex gap-3">
+            {[
+              { icon: 'Send', href: '#book' },
+              { icon: 'Phone', href: '#book' },
+              { icon: 'Instagram', href: '#book' },
+            ].map((s) => (
+              <a
+                key={s.icon}
+                href={s.href}
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--hero-x-ho)] text-hero-accent transition-transform hover:-translate-y-1"
+              >
+                <Icon name={s.icon} size={20} />
+              </a>
             ))}
-          </ul>
+          </div>
         </div>
 
         <div className="mt-8 flex flex-col items-start justify-between gap-2 border-t border-hero-line pt-6 text-xs font-medium uppercase tracking-wide text-hero-muted md:flex-row md:items-center">

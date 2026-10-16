@@ -6,8 +6,6 @@ import os
 import secrets
 from datetime import datetime, timedelta, timezone
 
-import urllib.request
-
 import boto3
 import psycopg2
 from psycopg2.extras import Json
@@ -15,29 +13,6 @@ from psycopg2.extras import Json
 HEADERS = {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}
 SECTIONS = {'hero', 'what', 'how', 'benefits', 'coach', 'reviews', 'pricing', 'faq', 'schedule', 'contacts', 'footer'}
 STATUSES = {'new', 'in_work', 'done', 'cancelled'}
-
-
-def push_paid_sheet(key, label, name, phone, email):
-    url = os.environ.get('GOOGLE_SHEETS_WEBHOOK_URL')
-    if not url:
-        return False
-    payload = json.dumps({
-        'tab': 'Записавшиеся и оплатившие',
-        'id': key,
-        'date': datetime.now(timezone(timedelta(hours=5))).strftime('%d.%m.%Y %H:%M'),
-        'name': name,
-        'phone': phone,
-        'email': email,
-        'event': label,
-        'status': 'Оплачено',
-    }, ensure_ascii=False).encode()
-    try:
-        req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'})
-        urllib.request.urlopen(req, timeout=4)
-        return True
-    except Exception as e:
-        print(f'sheet failed: {e}')
-        return False
 
 
 def resp(code, body):
@@ -194,13 +169,13 @@ def handler(event: dict, context) -> dict:
             return resp(200, {'ok': True})
 
         if action == 'list_waitlist':
-            cur.execute(f'SELECT id, event_id, name, phone, created_at, email FROM {schema}.waitlist ORDER BY created_at')
-            cols = ['id', 'event_id', 'name', 'phone', 'created_at', 'email']
+            cur.execute(f'SELECT id, event_id, name, phone, created_at FROM {schema}.waitlist ORDER BY created_at')
+            cols = ['id', 'event_id', 'name', 'phone', 'created_at']
             return resp(200, {'items': [dict(zip(cols, r)) for r in cur.fetchall()]})
 
         if action == 'promote_waitlist':
             wid = int(body.get('id', 0))
-            cur.execute(f'SELECT event_id, name, phone, email FROM {schema}.waitlist WHERE id = %s', (wid,))
+            cur.execute(f'SELECT event_id, name, phone FROM {schema}.waitlist WHERE id = %s', (wid,))
             w = cur.fetchone()
             if not w:
                 return resp(404, {'error': 'Человека уже нет в листе ожидания'})
@@ -222,13 +197,11 @@ def handler(event: dict, context) -> dict:
                 p for p in [ev[3], ev[2], ev[4]] if p
             )
             cur.execute(
-                f"INSERT INTO {schema}.bookings (name, phone, email, slot, status, event_id, event_label) "
-                f"VALUES (%s, %s, %s, '', 'done', %s, %s) RETURNING id",
-                (w[1], w[2], w[3], w[0], label),
+                f"INSERT INTO {schema}.bookings (name, phone, slot, status, event_id, event_label) "
+                f"VALUES (%s, %s, %s, 'done', %s, %s)",
+                (w[1], w[2], label, w[0], label),
             )
-            new_id = cur.fetchone()[0]
             cur.execute(f'DELETE FROM {schema}.waitlist WHERE id = %s', (wid,))
-            push_paid_sheet(f'b{new_id}', label, w[1], w[2], w[3])
             return resp(200, {'ok': True})
 
         if action == 'delete_waitlist':
@@ -236,23 +209,15 @@ def handler(event: dict, context) -> dict:
             return resp(200, {'ok': True})
 
         if action == 'list_bookings':
-            cur.execute(f'SELECT id, name, phone, slot, status, created_at, event_label, event_id, email FROM {schema}.bookings ORDER BY created_at DESC LIMIT 500')
-            cols = ['id', 'name', 'phone', 'slot', 'status', 'created_at', 'event_label', 'event_id', 'email']
+            cur.execute(f'SELECT id, name, phone, slot, status, created_at, event_label, event_id FROM {schema}.bookings ORDER BY created_at DESC LIMIT 500')
+            cols = ['id', 'name', 'phone', 'slot', 'status', 'created_at', 'event_label', 'event_id']
             return resp(200, {'items': [dict(zip(cols, r)) for r in cur.fetchall()]})
 
         if action == 'set_booking_status':
             status = body.get('status')
             if status not in STATUSES:
                 return resp(400, {'error': 'Некорректный статус'})
-            bid = int(body.get('id', 0))
-            cur.execute(f'SELECT status FROM {schema}.bookings WHERE id = %s', (bid,))
-            prev = cur.fetchone()
-            cur.execute(f'UPDATE {schema}.bookings SET status = %s WHERE id = %s', (status, bid))
-            if status == 'done' and prev and prev[0] != 'done':
-                cur.execute(f'SELECT name, phone, email, event_label FROM {schema}.bookings WHERE id = %s', (bid,))
-                b = cur.fetchone()
-                if b:
-                    push_paid_sheet(f'b{bid}', b[3], b[0], b[1], b[2])
+            cur.execute(f'UPDATE {schema}.bookings SET status = %s WHERE id = %s', (status, int(body.get('id', 0))))
             return resp(200, {'ok': True})
 
         if action == 'delete_booking':
